@@ -68,3 +68,4 @@ tasks/
 # Uploaded images (keep directory structure but ignore content)
 /public/uploads/*
 !/public/uploads/.gitkeep 
+.vercel
