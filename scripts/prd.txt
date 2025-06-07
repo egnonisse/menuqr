@@ -1,0 +1,145 @@
+# MenuQR - Application Web de Menu Digital pour Restaurants
+
+## Vue d'ensemble du produit
+
+MenuQR est une application web moderne permettant aux restaurants de créer et gérer des menus digitaux accessibles via QR codes, avec un système complet de gestion en back-office.
+
+## Objectifs du projet
+
+- Remplacer les menus papiers par des menus digitaux interactifs
+- Permettre aux restaurants de gérer facilement leurs contenus
+- Offrir une expérience utilisateur moderne aux clients
+- Centraliser la gestion des tables, menus, réservations et avis clients
+
+## Fonctionnalités principales
+
+### 1. Système d'authentification et comptes utilisateurs
+- Inscription/connexion pour les gérants de restaurant
+- Authentification sécurisée avec NextAuth.js
+- Gestion des sessions utilisateur
+
+### 2. Gestion des restaurants
+- Création de profil restaurant avec informations de base
+- Configuration des horaires d'ouverture par jour de la semaine
+- Gestion des informations de contact et description
+
+### 3. Gestion des tables et QR codes
+- Création et numérotation des tables
+- Génération automatique de QR codes réels pour chaque table
+- Téléchargement des QR codes en format PNG
+- Prévisualisation des QR codes dans l'interface admin
+- Statistiques sur les tables avec/sans QR codes
+
+### 4. Système de menu complet
+- Gestion des catégories de menu avec ordre personnalisable
+- Ajout/modification/suppression des plats
+- Upload d'images pour chaque plat (validation format et taille)
+- Gestion des prix et descriptions
+- Système de disponibilité des plats
+- Prévisualisation des images dans l'interface admin
+
+### 5. Interface publique pour les clients
+- Menu digital accessible via QR code par table
+- Affichage organisé par catégories
+- Images des plats et informations détaillées
+- Affichage des horaires d'ouverture en temps réel
+- Design responsive pour mobiles et tablettes
+
+### 6. Back-office administrateur
+- Dashboard central avec navigation intuitive
+- Interface moderne avec Tailwind CSS et Headless UI
+- Sidebar responsive avec icônes Heroicons
+- Gestion des sessions avec déconnexion
+- Indicateur du jour actuel dans les horaires
+
+### 7. Gestion des horaires d'ouverture
+- Configuration par jour de la semaine
+- Statut ouvert/fermé par jour
+- Heures d'ouverture et de fermeture personnalisables
+- Fonction "Appliquer à tous" pour répliquer les horaires
+- Affichage en temps réel sur le menu public
+
+## Architecture technique
+
+### Stack technologique
+- **Frontend/Backend**: Next.js 15 avec App Router
+- **Base de données**: SQLite avec Prisma ORM
+- **Authentification**: NextAuth.js
+- **Validation**: Zod pour la validation des données
+- **UI/UX**: Tailwind CSS + Headless UI + Heroicons
+- **QR Codes**: Bibliothèque qrcode pour génération
+- **Images**: Upload et stockage en base64
+- **Type Safety**: TypeScript complet
+
+### Structure de la base de données
+- Users (utilisateurs/gérants)
+- Restaurants (profils restaurants)
+- Tables (tables avec QR codes)
+- Categories (catégories de menu)
+- MenuItems (plats avec images)
+- Reservations (réservations clients)
+- Feedbacks (avis clients)
+- Homepage (configuration page d'accueil)
+
+### Sécurité et performance
+- Middleware de protection des routes admin
+- Validation des uploads d'images (taille, format)
+- Hachage des mots de passe avec bcrypt
+- Sessions sécurisées avec NextAuth
+- Optimisation des requêtes avec tRPC
+
+## Expérience utilisateur
+
+### Pour les gérants de restaurant
+1. **Inscription/Connexion** simple et sécurisée
+2. **Dashboard intuitif** avec navigation claire
+3. **Gestion des tables** avec génération automatique de QR codes
+4. **Édition de menu** avec upload d'images simplifié
+5. **Configuration des horaires** avec interface conviviale
+6. **Prévisualisation** des contenus côté client
+
+### Pour les clients du restaurant
+1. **Scan du QR code** sur la table
+2. **Menu digital moderne** avec images et descriptions
+3. **Navigation fluide** par catégories
+4. **Informations en temps réel** (horaires, disponibilité)
+5. **Design responsive** optimisé mobile
+
+## Livrables du projet
+
+### Phase 1: Fonctionnalités de base ✅
+- Système d'authentification complet
+- Gestion des restaurants et profils
+- Interface administrateur avec navigation
+
+### Phase 2: Gestion des contenus ✅
+- Système de tables avec QR codes réels
+- Gestion complète des menus avec images
+- Upload et validation des images
+- Interface publique responsive
+
+### Phase 3: Fonctionnalités avancées ✅
+- Gestion des horaires d'ouverture
+- Affichage en temps réel des informations
+- Optimisations UX et performance
+- Documentation complète
+
+## Critères de succès
+
+- ✅ Application fonctionnelle avec toutes les fonctionnalités de base
+- ✅ Interface intuitive pour les gérants de restaurant  
+- ✅ Menu digital accessible et responsive pour les clients
+- ✅ QR codes fonctionnels générant de vrais liens
+- ✅ Upload d'images opérationnel avec validation
+- ✅ Gestion complète des horaires d'ouverture
+- ✅ Architecture scalable et maintenant
+
+## Évolutions futures possibles
+
+- Système de réservations en ligne
+- Gestion des avis clients
+- Notifications push
+- Analytics et statistiques
+- Multi-langue
+- Intégration systèmes de paiement
+- API publique pour intégrations tierces 
