@@ -254,7 +254,7 @@ export default function MenuPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64String = event.target?.result as string;
-        setEditingItem((prev) => ({ ...prev, image: base64String }));
+        setEditingItem((prev: any) => ({ ...prev, image: base64String }));
       };
       reader.readAsDataURL(file);
     }
