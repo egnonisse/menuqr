@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "next build",
+		    "build": "prisma db push && next build",
 		"check": "biome check .",
 		"check:unsafe": "biome check --write --unsafe .",
 		"check:write": "biome check --write .",
@@ -14,7 +14,7 @@
 		"db:studio": "prisma studio",
 		"dev": "next dev",
 		"dev:turbo": "next dev --turbo",
-		"postinstall": "prisma generate && prisma db push",
+		    "postinstall": "prisma generate",
 		"preview": "next build && next start",
 		"start": "next start",
 		"typecheck": "tsc --noEmit"
