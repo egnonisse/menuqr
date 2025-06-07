@@ -78,8 +78,8 @@ export default function HoursPage() {
 
   // Load current hours when data is available
   useEffect(() => {
-    if (currentHours) {
-      setOpeningHours(currentHours as OpeningHours);
+    if (currentHours && typeof currentHours === 'object' && !Array.isArray(currentHours)) {
+      setOpeningHours(currentHours as unknown as OpeningHours);
     }
   }, [currentHours]);
 
@@ -105,7 +105,7 @@ export default function HoursPage() {
 
   const handleSave = () => {
     setIsSaving(true);
-    updateHoursMutation.mutate(openingHours);
+    updateHoursMutation.mutate(openingHours as unknown as Record<string, { isOpen: boolean; openTime?: string; closeTime?: string; }>);
   };
 
   const handleCopyToAll = (sourceDay: keyof OpeningHours) => {
