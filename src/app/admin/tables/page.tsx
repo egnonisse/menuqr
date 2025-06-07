@@ -144,7 +144,7 @@ export default function TablesPage() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{stats?.active || 0}</span>
+                    <span className="text-white font-bold text-sm">{stats?.total || 0}</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">

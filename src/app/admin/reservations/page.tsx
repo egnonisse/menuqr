@@ -24,7 +24,7 @@ export default function ReservationsPage() {
   const { data: reservationsByDate = [] } = api.reservations.getByDate.useQuery(
     { 
       restaurantId: restaurant?.id || "",
-      date: new Date(selectedDate)
+      date: new Date(selectedDate || new Date())
     },
     { enabled: !!restaurant?.id }
   );
@@ -200,7 +200,7 @@ export default function ReservationsPage() {
         <div className="bg-white shadow overflow-hidden sm:rounded-md mb-8">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Réservations du {new Date(selectedDate).toLocaleDateString('fr-FR')}
+              Réservations du {new Date(selectedDate || new Date()).toLocaleDateString('fr-FR')}
             </h3>
           </div>
           {reservationsByDate.length === 0 ? (
