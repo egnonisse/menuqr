@@ -13,19 +13,20 @@ export const settingsRouter = createTRPCRouter({
       throw new Error("Restaurant not found");
     }
 
-    // Create default settings if they don't exist
-    if (!restaurant.settings) {
-      const defaultSettings = await ctx.db.restaurantSettings.create({
-        data: {
-          restaurantId: restaurant.id,
-          primaryColor: "#FF6600",
-          commandeATable: false,
-          showRating: true,
-          showReviews: true,
-        },
-      });
-      return defaultSettings;
-    }
+          // Create default settings if they don't exist
+      if (!restaurant.settings) {
+        const defaultSettings = await ctx.db.restaurantSettings.create({
+          data: {
+            restaurantId: restaurant.id,
+            primaryColor: "#FF6600",
+            commandeATable: false,
+            showRating: true,
+            showReviews: true,
+            currency: "FCFA",
+          },
+        });
+        return defaultSettings;
+      }
 
     return restaurant.settings;
   }),
@@ -39,6 +40,7 @@ export const settingsRouter = createTRPCRouter({
         commandeATable: z.boolean(),
         showRating: z.boolean().optional(),
         showReviews: z.boolean().optional(),
+        currency: z.enum(["USD", "EUR", "FCFA"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -61,6 +63,7 @@ export const settingsRouter = createTRPCRouter({
           commandeATable: input.commandeATable,
           showRating: input.showRating ?? true,
           showReviews: input.showReviews ?? true,
+          currency: input.currency ?? "FCFA",
         },
         update: {
           logoUrl: input.logoUrl,
@@ -68,6 +71,7 @@ export const settingsRouter = createTRPCRouter({
           commandeATable: input.commandeATable,
           showRating: input.showRating,
           showReviews: input.showReviews,
+          currency: input.currency,
         },
       });
 
@@ -90,6 +94,7 @@ export const settingsRouter = createTRPCRouter({
           logoUrl: null,
           showRating: true,
           showReviews: true,
+          currency: "FCFA",
         };
       }
 
@@ -99,6 +104,7 @@ export const settingsRouter = createTRPCRouter({
         logoUrl: restaurant.settings.logoUrl,
         showRating: restaurant.settings.showRating,
         showReviews: restaurant.settings.showReviews,
+        currency: restaurant.settings.currency,
       };
     }),
 }); 

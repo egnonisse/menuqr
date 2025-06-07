@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { PlusIcon, PencilIcon, TrashIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
+import { formatPrice, type Currency } from "@/utils/currency";
 
 export default function MenuPage() {
   const { data: session } = useSession();
@@ -30,6 +31,12 @@ export default function MenuPage() {
 
   // Get user's restaurant
   const { data: restaurant } = api.restaurant.getMine.useQuery(
+    undefined,
+    { enabled: !!session }
+  );
+
+  // Get restaurant settings for currency
+  const { data: settings } = api.settings.getMine.useQuery(
     undefined,
     { enabled: !!session }
   );
@@ -521,7 +528,7 @@ export default function MenuPage() {
                           {item.description || 'Aucune description'}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          <span className="font-semibold text-indigo-600">{item.price}€</span>
+                          <span className="font-semibold text-indigo-600">{formatPrice(item.price, settings?.currency as Currency)}</span>
                           {item.category && (
                             <span className="ml-2">• {item.category.emoji} {item.category.name}</span>
                           )}
@@ -744,7 +751,7 @@ export default function MenuPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prix (€)
+                      Prix ({settings?.currency || 'FCFA'})
                     </label>
                     <input
                       type="number"
@@ -752,7 +759,7 @@ export default function MenuPage() {
                       value={newItem.price}
                       onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Ex: 12.50"
+                      placeholder={`Ex: ${settings?.currency === 'USD' ? '12.50' : settings?.currency === 'EUR' ? '10,50' : '1000'}`}
                     />
                   </div>
                   
@@ -870,7 +877,7 @@ export default function MenuPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prix (€)
+                      Prix ({settings?.currency || 'FCFA'})
                     </label>
                     <input
                       type="number"
@@ -878,7 +885,7 @@ export default function MenuPage() {
                       value={editingItem.price}
                       onChange={(e) => setEditingItem({ ...editingItem, price: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Ex: 12.50"
+                      placeholder={`Ex: ${settings?.currency === 'USD' ? '12.50' : settings?.currency === 'EUR' ? '10,50' : '1000'}`}
                     />
                   </div>
                   

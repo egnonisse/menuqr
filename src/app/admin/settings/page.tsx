@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [commandeATable, setCommandeATable] = useState(false);
   const [showRating, setShowRating] = useState(true);
   const [showReviews, setShowReviews] = useState(true);
+  const [currency, setCurrency] = useState("FCFA");
 
   // Restaurant form state
   const [restaurantForm, setRestaurantForm] = useState({
@@ -49,6 +50,7 @@ export default function SettingsPage() {
       setCommandeATable(settings.commandeATable);
       setShowRating(settings.showRating ?? true);
       setShowReviews(settings.showReviews ?? true);
+      setCurrency(settings.currency || "FCFA");
     }
   }, [settings]);
 
@@ -73,6 +75,7 @@ export default function SettingsPage() {
         commandeATable,
         showRating,
         showReviews,
+        currency,
       });
     } catch (error) {
       // Error is handled by onError callback
@@ -243,6 +246,25 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            {/* Currency Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                💰 Devise
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="FCFA">FCFA (Franc CFA) - 1000 FCFA</option>
+                <option value="EUR">EUR (Euro) - 10,50 €</option>
+                <option value="USD">USD (Dollar) - $12.99</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                Choisissez la devise qui sera affichée dans votre menu et sur votre site
+              </p>
+            </div>
+
             {/* Preview */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Aperçu</label>
@@ -265,6 +287,9 @@ export default function SettingsPage() {
                   >
                     Bouton exemple
                   </button>
+                  <span className="text-sm text-gray-600 font-medium">
+                    Prix exemple: {currency === 'USD' ? '$12.99' : currency === 'EUR' ? '10,50 €' : '1000 FCFA'}
+                  </span>
                 </div>
               </div>
             </div>

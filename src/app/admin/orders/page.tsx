@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { api } from "@/trpc/react";
+import { formatPrice, type Currency } from "@/utils/currency";
 
 type OrderStatus = "pending" | "preparing" | "served" | "cancelled";
 
@@ -29,6 +30,7 @@ export default function OrdersPage() {
   
   const { data: orders, isPending: isLoadingOrders, refetch } = api.orders.getAll.useQuery();
   const { data: stats, isPending: isLoadingStats } = api.orders.getStats.useQuery();
+  const { data: settings } = api.settings.getMine.useQuery();
   
   const updateOrderStatus = api.orders.updateStatus.useMutation({
     onSuccess: () => {
@@ -182,7 +184,7 @@ export default function OrdersPage() {
                         {statusConfig[status]?.label}
                       </span>
                       <div className="text-lg font-bold">
-                        {order.totalAmount.toFixed(2)} €
+                        {formatPrice(order.totalAmount, settings?.currency as Currency)}
                       </div>
                     </div>
                   </div>

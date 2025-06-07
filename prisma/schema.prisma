@@ -182,6 +182,7 @@ model RestaurantSettings {
     commandeATable     Boolean    @default(false)
     showRating         Boolean    @default(true)  // Afficher la note du restaurant
     showReviews        Boolean    @default(true)  // Afficher les avis clients
+    currency           String     @default("FCFA") // Devise: USD, EUR, FCFA
     restaurant         Restaurant @relation(fields: [restaurantId], references: [id])
     restaurantId       String     @unique
     createdAt          DateTime   @default(now())

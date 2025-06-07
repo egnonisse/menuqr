@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
+import { formatPrice, type Currency } from "@/utils/currency";
 
 export default function MenuPage() {
   const params = useParams();
@@ -264,7 +265,7 @@ export default function MenuPage() {
                   </div>
                   <div className="ml-4 text-right">
                     <span className="text-xl font-bold text-indigo-600">
-                      {item.price}€
+                      {formatPrice(item.price, settings?.currency as Currency)}
                     </span>
                     {settings?.commandeATable && item.available && tableId !== "preview" && (
                       <div className="mt-2 space-y-2">
@@ -334,7 +335,7 @@ export default function MenuPage() {
                       <div className="flex-1">
                         <div className="font-medium">{cartItem.item.name}</div>
                         <div className="text-sm text-gray-500">
-                          {cartItem.item.price}€ x {cartItem.quantity}
+                          {formatPrice(cartItem.item.price, settings?.currency as Currency)} x {cartItem.quantity}
                         </div>
                         <input
                           type="text"
@@ -365,7 +366,7 @@ export default function MenuPage() {
               )}
               
               <div className="flex justify-between items-center mb-4">
-                <span className="font-semibold">Total: {getTotalPrice().toFixed(2)}€</span>
+                <span className="font-semibold">Total: {formatPrice(getTotalPrice(), settings?.currency as Currency)}</span>
                 <span className="text-sm text-gray-500">{getTotalItems()} article(s)</span>
               </div>
               
