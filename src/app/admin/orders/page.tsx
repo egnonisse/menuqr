@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { api } from "@/trpc/react";
 import { formatPrice, type Currency } from "@/utils/currency";
+import { toast } from "sonner";
 
 type OrderStatus = "pending" | "preparing" | "served" | "cancelled";
 
@@ -34,11 +35,11 @@ export default function OrdersPage() {
   
   const updateOrderStatus = api.orders.updateStatus.useMutation({
     onSuccess: () => {
-      alert("Statut de la commande mis à jour !");
+      toast.success("✅ Statut de la commande mis à jour !", { description: "Modifications sauvegardées." });
       refetch();
     },
     onError: (error) => {
-      alert("Erreur : " + error.message);
+      toast.error("❌ Erreur", { description: error.message });
     },
   });
 

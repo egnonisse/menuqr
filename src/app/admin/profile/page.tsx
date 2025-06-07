@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 import { UserIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -13,20 +14,20 @@ export default function ProfilePage() {
   // Mutations
   const updateProfileMutation = api.auth.updateProfile.useMutation({
     onSuccess: () => {
-      alert("Profil mis à jour avec succès !");
+      toast.success("✅ Profil mis à jour avec succès !", { description: "Opération réussie." });
     },
     onError: (error) => {
-      alert("Erreur : " + error.message);
+      toast.error("❌ Erreur", { description: error.message });
     },
   });
 
   const changePasswordMutation = api.auth.changePassword.useMutation({
     onSuccess: () => {
-      alert("Mot de passe modifié avec succès !");
+      toast.success("✅ Mot de passe modifié avec succès !", { description: "Opération réussie." });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     },
     onError: (error) => {
-      alert("Erreur : " + error.message);
+      toast.error("❌ Erreur", { description: error.message });
     },
   });
 
@@ -67,12 +68,12 @@ export default function ProfilePage() {
     e.preventDefault();
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("Les mots de passe ne correspondent pas !");
+      toast.info("ℹ️ Information", { description: "Les mots de passe ne correspondent pas !" });
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
-      alert("Le mot de passe doit contenir au moins 6 caractères !");
+      toast.warning("🔒 Mot de passe", { description: "Le mot de passe doit contenir au moins 6 caractères !" });
       return;
     }
 

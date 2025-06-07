@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
 import { formatPrice, type Currency } from "@/utils/currency";
+import { toast } from "sonner";
 
 export default function MenuPage() {
   const params = useParams();
@@ -39,12 +40,12 @@ export default function MenuPage() {
   // Create order mutation
   const createOrder = api.orders.create.useMutation({
     onSuccess: () => {
-      alert("Commande envoyée avec succès !");
+      toast.success("✅ Commande envoyée avec succès !", { description: "Opération réussie." });
       setCart({});
       setShowCart(false);
     },
     onError: (error) => {
-      alert("Erreur lors de l'envoi de la commande : " + error.message);
+      toast.error("❌ Erreur de l'envoi de la commande", { description: error.message });
     },
   });
 
@@ -117,13 +118,13 @@ export default function MenuPage() {
 
   const handleOrder = async () => {
     if (Object.keys(cart).length === 0) {
-      alert("Votre panier est vide !");
+      toast.warning("🛒 Votre panier est vide !", { description: "Ajoutez des articles avant de commander." });
       return;
     }
 
     // Check if tableId is valid (not preview mode)
     if (tableId === "preview") {
-      alert("Impossible de passer commande en mode preview. Veuillez utiliser un QR code d'une vraie table.");
+      toast.warning("👁️ Mode aperçu", { description: "Impossible de passer commande en mode preview. Veuillez utiliser un QR code d'une vraie table." });
       return;
     }
 

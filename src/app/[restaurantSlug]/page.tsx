@@ -5,6 +5,7 @@ import { api } from "@/trpc/react";
 import { StarIcon } from "@heroicons/react/24/solid";
 import { PhoneIcon, MapPinIcon, ClockIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface DayHours {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export default function RestaurantHomePage() {
       setTimeout(() => setFeedbackSubmitted(false), 5000);
     },
     onError: (error) => {
-      alert("Erreur lors de l'envoi de votre avis : " + error.message);
+      toast.error("❌ Erreur de l'envoi de votre avis", { description: error.message });
     },
   });
 

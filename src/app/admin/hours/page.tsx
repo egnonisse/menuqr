@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ClockIcon } from "@heroicons/react/24/outline";
 import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface DayHours {
   isOpen: boolean;
@@ -68,11 +69,11 @@ export default function HoursPage() {
   const updateHoursMutation = api.restaurant.updateOpeningHours.useMutation({
     onSuccess: () => {
       setIsSaving(false);
-      alert("Horaires d'ouverture mis à jour avec succès !");
+      toast.success("✅ Horaires d'ouverture mis à jour avec succès !", { description: "Opération réussie." });
     },
     onError: () => {
       setIsSaving(false);
-      alert("Erreur lors de la mise à jour des horaires");
+      toast.info("ℹ️ Information", { description: "Erreur lors de la mise à jour des horaires" });
     },
   });
 

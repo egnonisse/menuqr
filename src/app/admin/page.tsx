@@ -1,13 +1,10 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
 import { api } from "@/trpc/react";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
-  const [showCreateRestaurant, setShowCreateRestaurant] = useState(false);
-  const [restaurantName, setRestaurantName] = useState("");
 
   // Get restaurant for current user
   const { 
@@ -25,22 +22,7 @@ export default function AdminDashboard() {
     { enabled: !!restaurant }
   );
 
-  // Create restaurant mutation
-  const createRestaurantMutation = api.restaurant.create.useMutation({
-    onSuccess: () => {
-      refetchRestaurant();
-      setShowCreateRestaurant(false);
-      setRestaurantName("");
-    },
-  });
 
-  const handleCreateRestaurant = () => {
-    if (restaurantName.trim() && !createRestaurantMutation.isPending) {
-      createRestaurantMutation.mutate({
-        name: restaurantName.trim(),
-      });
-    }
-  };
 
   // Show loading state while checking session and restaurant
   if (!session || isLoadingRestaurant) {
@@ -56,68 +38,23 @@ export default function AdminDashboard() {
     );
   }
 
-    // If user has no restaurant, show create form or welcome screen
+  // If user has no restaurant (edge case - should not happen with auto-creation)
   if (!restaurant) {
-    // Show create restaurant form
-    if (showCreateRestaurant) {
-      return (
-        <div className="py-6">
-          <div className="max-w-lg mx-auto px-4 sm:px-6 md:px-8">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Créer votre restaurant
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom du restaurant
-                  </label>
-                  <input
-                    type="text"
-                    value={restaurantName}
-                    onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Mon Super Restaurant"
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setShowCreateRestaurant(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleCreateRestaurant}
-                    disabled={createRestaurantMutation.isPending || !restaurantName}
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
-                  >
-                    {createRestaurantMutation.isPending ? 'Création...' : 'Créer'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Show welcome screen with create button
     return (
       <div className="py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Bienvenue dans MenuQR !
-            </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Pour commencer, créez votre restaurant.
+        <div className="max-w-lg mx-auto px-4 sm:px-6 md:px-8">
+          <div className="bg-white shadow rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Configuration en cours...
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Votre restaurant est en cours de configuration. Veuillez patienter ou rafraîchir la page.
             </p>
             <button
-              onClick={() => setShowCreateRestaurant(true)}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
             >
-              Créer mon restaurant
+              Rafraîchir la page
             </button>
           </div>
         </div>

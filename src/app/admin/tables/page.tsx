@@ -5,6 +5,7 @@ import { PlusIcon, QrCodeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24
 import QrCodeGenerator from "@/components/QrCodeGenerator";
 import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function TablesPage() {
   const { data: session } = useSession();
@@ -54,7 +55,7 @@ export default function TablesPage() {
       setEditingTable(null);
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error("❌ Erreur", { description: error.message });
     },
   });
 

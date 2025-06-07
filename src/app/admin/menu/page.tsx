@@ -5,6 +5,7 @@ import { PlusIcon, PencilIcon, TrashIcon, PhotoIcon } from "@heroicons/react/24/
 import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
 import { formatPrice, type Currency } from "@/utils/currency";
+import { toast } from "sonner";
 
 export default function MenuPage() {
   const { data: session } = useSession();
@@ -86,9 +87,14 @@ export default function MenuPage() {
       refetchCategories();
       setEditingItem(null);
       setShowEditItemModal(false);
+      toast.success("✅ Article mis à jour !", {
+        description: "Les modifications ont été sauvegardées.",
+      });
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error("❌ Erreur de mise à jour", {
+        description: error.message,
+      });
     },
   });
 
@@ -98,9 +104,14 @@ export default function MenuPage() {
       refetchCategories();
       setNewCategory({ name: "", emoji: "", description: "" });
       setShowAddCategoryModal(false);
+      toast.success("📂 Catégorie créée !", {
+        description: "La nouvelle catégorie a été ajoutée au menu.",
+      });
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error("❌ Erreur de création", {
+        description: error.message,
+      });
     },
   });
 
@@ -109,18 +120,28 @@ export default function MenuPage() {
       refetchCategories();
       setEditingCategory(null);
       setShowEditCategoryModal(false);
+      toast.success("📝 Catégorie modifiée !", {
+        description: "Les changements ont été sauvegardés.",
+      });
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error("❌ Erreur de modification", {
+        description: error.message,
+      });
     },
   });
 
   const deleteCategoryMutation = api.menu.deleteCategory.useMutation({
     onSuccess: () => {
       refetchCategories();
+      toast.success("🗑️ Catégorie supprimée", {
+        description: "La catégorie a été retirée du menu.",
+      });
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error("❌ Erreur de suppression", {
+        description: error.message,
+      });
     },
   });
 
@@ -129,13 +150,13 @@ export default function MenuPage() {
     if (file) {
       // Vérifier la taille du fichier (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("L'image est trop volumineuse. Taille maximum: 5MB");
+        toast.error("📁 Fichier trop volumineux", { description: "L'image est trop volumineuse. Taille maximum: 5MB" });
         return;
       }
 
       // Vérifier le type de fichier
       if (!file.type.startsWith('image/')) {
-        alert("Veuillez sélectionner un fichier image valide");
+        toast.error("🖼️ Format invalide", { description: "Veuillez sélectionner un fichier image valide" });
         return;
       }
 
@@ -248,13 +269,13 @@ export default function MenuPage() {
     if (file) {
       // Vérifier la taille du fichier (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("L'image est trop volumineuse. Taille maximum: 5MB");
+        toast.error("📁 Fichier trop volumineux", { description: "L'image est trop volumineuse. Taille maximum: 5MB" });
         return;
       }
 
       // Vérifier le type de fichier
       if (!file.type.startsWith('image/')) {
-        alert("Veuillez sélectionner un fichier image valide");
+        toast.error("🖼️ Format invalide", { description: "Veuillez sélectionner un fichier image valide" });
         return;
       }
 

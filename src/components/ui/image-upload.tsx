@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
 
 interface ImageUploadProps {
   onImageUpload: (imageUrl: string) => void;
@@ -60,7 +61,9 @@ export default function ImageUpload({
     } catch (error) {
       console.error("Upload error:", error);
       const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-      alert(`Erreur lors de l'upload de l'image: ${errorMessage}`);
+      toast.error("❌ Erreur d'upload", {
+        description: `Erreur lors de l'upload de l'image: ${errorMessage}`,
+      });
       setPreviewUrl(currentImage || "");
     } finally {
       setIsUploading(false);

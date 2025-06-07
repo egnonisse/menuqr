@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
+import { toast } from "sonner";
 
 export default function ReservationPage() {
   const params = useParams();
@@ -32,7 +33,9 @@ export default function ReservationPage() {
     },
     onError: (error) => {
       console.error("❌ Error creating reservation:", error);
-      alert(`Erreur lors de la création de la réservation: ${error.message}`);
+      toast.error("❌ Erreur de réservation", {
+        description: `Erreur lors de la création de la réservation: ${error.message}`,
+      });
     },
   });
 

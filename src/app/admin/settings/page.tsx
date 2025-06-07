@@ -3,26 +3,35 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 import ImageUpload from "@/components/ui/image-upload";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { data: settings, isPending: isLoadingSettings } = api.settings.getMine.useQuery();
   const { data: restaurant, refetch: refetchRestaurant } = api.restaurant.getMine.useQuery();
   const updateSettings = api.settings.update.useMutation({
     onSuccess: () => {
-      alert("Paramètres mis à jour avec succès !");
+      toast.success("✅ Paramètres mis à jour avec succès !", {
+        description: "Vos modifications ont été sauvegardées.",
+      });
     },
     onError: (error) => {
-      alert("Erreur lors de la mise à jour : " + error.message);
+      toast.error("❌ Erreur lors de la mise à jour", {
+        description: error.message,
+      });
     },
   });
 
   const updateRestaurantMutation = api.restaurant.update.useMutation({
     onSuccess: () => {
       refetchRestaurant();
-      alert("Informations du restaurant mises à jour avec succès !");
+      toast.success("🏢 Informations mises à jour !", {
+        description: "Les informations du restaurant ont été sauvegardées.",
+      });
     },
     onError: (error) => {
-      alert("Erreur : " + error.message);
+      toast.error("❌ Erreur de sauvegarde", {
+        description: error.message,
+      });
     },
   });
 

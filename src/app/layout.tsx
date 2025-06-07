@@ -6,6 +6,7 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
 import { SessionProviderWrapper } from "@/components/providers/session-provider";
 import { auth } from "@/server/auth";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
 	title: "MenuQR - Menus digitaux pour restaurants",
@@ -29,6 +30,7 @@ export default async function RootLayout({
 				<SessionProviderWrapper session={session}>
 					<TRPCReactProvider>{children}</TRPCReactProvider>
 				</SessionProviderWrapper>
+				<Toaster />
 			</body>
 		</html>
 	);
