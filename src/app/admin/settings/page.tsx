@@ -75,7 +75,7 @@ export default function SettingsPage() {
         commandeATable,
         showRating,
         showReviews,
-        currency,
+        currency: currency as "USD" | "EUR" | "FCFA",
       });
     } catch (error) {
       // Error is handled by onError callback
