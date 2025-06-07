@@ -1,29 +1,69 @@
-# Create T3 App
+# MenuQR 🍽️📱
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+**MenuQR** - Digitalisez votre restaurant avec des menus QR, réservations en ligne et gestion complète via back-office.
 
-## What's next? How do I make an app with this?
+## 🎯 Description
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+Une **Web App moderne pour restaurants** permettant :
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+- 📱 **Clients** : Menu digital via QR code + réservations en ligne + avis clients
+- 👨‍💼 **Gérants** : Back-office complet pour gérer menus, tables, réservations et retours clients
+- 🌐 **Vitrine** : Mini-site personnalisable pour chaque restaurant
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## 🛠️ Technologies
 
-## Learn More
+- **Framework** : Next.js (T3 Stack)
+- **Backend** : tRPC + Next.js API Routes
+- **Database** : Prisma + PostgreSQL
+- **Auth** : NextAuth.js
+- **UI** : Tailwind CSS
+- **Validation** : Zod
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+## 🚀 Installation
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+```bash
+# Cloner le repo
+git clone https://github.com/egnonisse/menuqr.git
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+# Installer les dépendances
+npm install
 
-## How do I deploy this?
+# Configurer la base de données
+cp .env.example .env
+# Éditer .env avec vos variables
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+# Initialiser Prisma
+npx prisma generate
+npx prisma db push
+
+# Lancer en développement
+npm run dev
+```
+
+## 📝 Fonctionnalités
+
+- ✅ **Menu digital** accessible via QR code
+- ✅ **Réservations en ligne** avec gestion admin
+- ✅ **Avis clients** collectés automatiquement  
+- ✅ **Back-office complet** : menus, tables, stats
+- ✅ **Mini-site vitrine** personnalisable
+- ✅ **Génération QR codes** pour chaque table
+
+## 🎨 Pages principales
+
+**Public :**
+- `/` - Mini-site du restaurant
+- `/reservation` - Formulaire de réservation  
+- `/menu/[tableId]` - Menu via QR code
+- `/feedback/[tableId]` - Avis client
+
+**Admin :**
+- `/admin` - Dashboard
+- `/admin/tables` - Gestion tables + QR codes
+- `/admin/menu` - Gestion menus & catégories
+- `/admin/reservations` - Suivi réservations
+- `/admin/feedbacks` - Avis reçus
+
+## 📄 License
+
+MIT License - voir [LICENSE](LICENSE) pour plus de détails.
