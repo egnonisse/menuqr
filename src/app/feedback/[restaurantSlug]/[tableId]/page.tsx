@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 
 export default function FeedbackPage() {
@@ -13,9 +13,20 @@ export default function FeedbackPage() {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [selectedMenuItems, setSelectedMenuItems] = useState<Array<{
+    menuItemId: string;
+    rating?: number;
+    comment?: string;
+  }>>([]);
 
   // Get restaurant info
   const { data: restaurant } = api.restaurant.getBySlug.useQuery({ slug: restaurantSlug });
+  
+  // Get menu items for tagging
+  const { data: menuItems = [] } = api.menu.getItems.useQuery(
+    { restaurantId: restaurant?.id || "" },
+    { enabled: !!restaurant?.id }
+  );
 
   // Create feedback mutation
   const createFeedbackMutation = api.feedbacks.create.useMutation({
@@ -35,8 +46,42 @@ export default function FeedbackPage() {
         comment: comment || undefined,
         restaurantId: restaurant.id,
         tableId,
+        menuItems: selectedMenuItems.length > 0 ? selectedMenuItems : undefined,
       });
     }
+  };
+
+  const toggleMenuItem = (menuItemId: string, menuItemName: string) => {
+    setSelectedMenuItems(prev => {
+      const exists = prev.find(item => item.menuItemId === menuItemId);
+      if (exists) {
+        // Retirer le plat
+        return prev.filter(item => item.menuItemId !== menuItemId);
+      } else {
+        // Ajouter le plat
+        return [...prev, { menuItemId }];
+      }
+    });
+  };
+
+  const updateMenuItemRating = (menuItemId: string, rating: number) => {
+    setSelectedMenuItems(prev => 
+      prev.map(item => 
+        item.menuItemId === menuItemId 
+          ? { ...item, rating }
+          : item
+      )
+    );
+  };
+
+  const updateMenuItemComment = (menuItemId: string, comment: string) => {
+    setSelectedMenuItems(prev => 
+      prev.map(item => 
+        item.menuItemId === menuItemId 
+          ? { ...item, comment }
+          : item
+      )
+    );
   };
 
   if (!restaurant) {
@@ -124,10 +169,95 @@ export default function FeedbackPage() {
               </div>
             </div>
 
+            {/* Menu Items Tagging */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Quels plats avez-vous goûtés ? (optionnel)
+              </label>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {menuItems.map((item: any) => {
+                  const isSelected = selectedMenuItems.find(selected => selected.menuItemId === item.id);
+                  return (
+                    <div key={item.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`item-${item.id}`}
+                        checked={!!isSelected}
+                        onChange={() => toggleMenuItem(item.id, item.name)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`item-${item.id}`} className="ml-2 text-sm text-gray-700">
+                        {item.name} 
+                        {item.category && (
+                          <span className="text-gray-500 ml-1">({item.category.name})</span>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Detailed ratings for selected items */}
+              {selectedMenuItems.length > 0 && (
+                <div className="mt-4 space-y-4 border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-700">
+                    Évaluez vos plats sélectionnés :
+                  </h4>
+                  {selectedMenuItems.map((selectedItem) => {
+                    const menuItem = menuItems.find((item: any) => item.id === selectedItem.menuItemId);
+                    if (!menuItem) return null;
+                    
+                    return (
+                      <div key={selectedItem.menuItemId} className="bg-gray-50 p-3 rounded-lg">
+                        <div className="text-sm font-medium text-gray-900 mb-2">
+                          {menuItem.name}
+                        </div>
+                        
+                        {/* Rating pour ce plat */}
+                        <div className="mb-2">
+                          <label className="block text-xs text-gray-600 mb-1">Note :</label>
+                          <div className="flex space-x-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => updateMenuItemRating(selectedItem.menuItemId, star)}
+                                className={`w-6 h-6 ${
+                                  star <= (selectedItem.rating || 0)
+                                    ? "text-yellow-400"
+                                    : "text-gray-300 hover:text-yellow-300"
+                                } transition-colors`}
+                              >
+                                <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Commentaire pour ce plat */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Commentaire :</label>
+                          <input
+                            type="text"
+                            value={selectedItem.comment || ""}
+                            onChange={(e) => updateMenuItemComment(selectedItem.menuItemId, e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Votre avis sur ce plat..."
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Comment */}
             <div>
               <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
-                Commentaire (optionnel)
+                Commentaire général (optionnel)
               </label>
               <textarea
                 id="comment"
@@ -135,7 +265,7 @@ export default function FeedbackPage() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Partagez votre expérience avec nous..."
+                placeholder="Partagez votre expérience globale avec nous..."
               />
             </div>
 

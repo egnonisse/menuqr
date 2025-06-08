@@ -8,7 +8,14 @@ export const feedbacksRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.feedback.findMany({
         where: { restaurantId: input.restaurantId },
-        include: { table: true },
+        include: { 
+          table: true,
+          menuItems: {
+            include: {
+              menuItem: true
+            }
+          }
+        },
         orderBy: { createdAt: "desc" },
       });
     }),
@@ -22,10 +29,15 @@ export const feedbacksRouter = createTRPCRouter({
         customerName: z.string().optional(),
         restaurantId: z.string(),
         tableId: z.string().optional(),
+        menuItems: z.array(z.object({
+          menuItemId: z.string(),
+          rating: z.number().min(1).max(5).optional(),
+          comment: z.string().optional(),
+        })).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.feedback.create({
+      const feedback = await ctx.db.feedback.create({
         data: {
           rating: input.rating,
           comment: input.comment,
@@ -34,6 +46,20 @@ export const feedbacksRouter = createTRPCRouter({
           tableId: input.tableId,
         },
       });
+
+      // Créer les liens vers les plats mentionnés
+      if (input.menuItems && input.menuItems.length > 0) {
+        await ctx.db.feedbackMenuItem.createMany({
+          data: input.menuItems.map((item) => ({
+            feedbackId: feedback.id,
+            menuItemId: item.menuItemId,
+            rating: item.rating,
+            comment: item.comment,
+          })),
+        });
+      }
+
+      return feedback;
     }),
 
   // Delete a feedback
@@ -84,7 +110,14 @@ export const feedbacksRouter = createTRPCRouter({
           restaurantId: input.restaurantId,
           isApproved: true // Seulement les avis approuvés pour le public
         },
-        include: { table: true },
+        include: { 
+          table: true,
+          menuItems: {
+            include: {
+              menuItem: true
+            }
+          }
+        },
         orderBy: { createdAt: "desc" },
         take: input.limit,
       });
@@ -135,6 +168,86 @@ export const feedbacksRouter = createTRPCRouter({
       return ctx.db.feedback.update({
         where: { id: input.id },
         data: { isApproved: false },
+      });
+    }),
+
+  // Get menu item statistics (analytics par plat)
+  getMenuItemStats: publicProcedure
+    .input(z.object({ restaurantId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const feedbackMenuItems = await ctx.db.feedbackMenuItem.findMany({
+        where: {
+          feedback: {
+            restaurantId: input.restaurantId,
+            isApproved: true
+          }
+        },
+        include: {
+          menuItem: true,
+          feedback: true
+        }
+      });
+
+      // Grouper par plat et calculer les stats
+      const itemStats = feedbackMenuItems.reduce((acc: any, item) => {
+        const menuItemId = item.menuItemId;
+        if (!acc[menuItemId]) {
+          acc[menuItemId] = {
+            menuItem: item.menuItem,
+            totalMentions: 0,
+            ratings: [],
+            comments: []
+          };
+        }
+        
+        acc[menuItemId].totalMentions++;
+        if (item.rating) {
+          acc[menuItemId].ratings.push(item.rating);
+        }
+        if (item.comment) {
+          acc[menuItemId].comments.push(item.comment);
+        }
+        
+        return acc;
+      }, {});
+
+      // Calculer les moyennes et retourner le résultat formaté
+      return Object.values(itemStats).map((stat: any) => ({
+        menuItem: stat.menuItem,
+        totalMentions: stat.totalMentions,
+        averageRating: stat.ratings.length > 0 
+          ? Math.round((stat.ratings.reduce((sum: number, rating: number) => sum + rating, 0) / stat.ratings.length) * 10) / 10
+          : null,
+        totalRatings: stat.ratings.length,
+        comments: stat.comments
+      })).sort((a: any, b: any) => b.totalMentions - a.totalMentions);
+    }),
+
+  // Get specific menu item feedbacks
+  getMenuItemFeedbacks: publicProcedure
+    .input(z.object({ 
+      menuItemId: z.string(),
+      restaurantId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.feedbackMenuItem.findMany({
+        where: {
+          menuItemId: input.menuItemId,
+          feedback: {
+            restaurantId: input.restaurantId,
+            isApproved: true
+          }
+        },
+        include: {
+          feedback: {
+            include: {
+              table: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
       });
     }),
 }); 

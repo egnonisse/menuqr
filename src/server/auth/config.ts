@@ -85,14 +85,14 @@ export const authConfig = {
 		},
 		async session({ session, token }) {
 			return {
-				...session,
-				user: {
-					...session.user,
+			...session,
+			user: {
+				...session.user,
 					id: token.sub!,
 					restaurantId: token.restaurantId as string | undefined,
 				},
 			};
-		},
+			},
 	},
 	pages: {
 		signIn: "/auth/signin"

@@ -238,6 +238,26 @@ export default function FeedbacksPage() {
                             "{feedback.comment}"
                           </p>
                         )}
+                        {feedback.menuItems && feedback.menuItems.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 mb-1">Plats mentionnés :</p>
+                            <div className="flex flex-wrap gap-1">
+                              {feedback.menuItems.map((item: any) => (
+                                <span 
+                                  key={item.id}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                                >
+                                  {item.menuItem.name}
+                                  {item.rating && (
+                                    <span className="ml-1 text-yellow-600">
+                                      ⭐ {item.rating}/5
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs text-gray-400">
                           {formatDate(feedback.createdAt)}
                         </p>
@@ -307,6 +327,26 @@ export default function FeedbacksPage() {
                           <p className="text-gray-700 text-sm mb-2">
                             "{feedback.comment}"
                           </p>
+                        )}
+                        {feedback.menuItems && feedback.menuItems.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 mb-1">Plats mentionnés :</p>
+                            <div className="flex flex-wrap gap-1">
+                              {feedback.menuItems.map((item: any) => (
+                                <span 
+                                  key={item.id}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                                >
+                                  {item.menuItem.name}
+                                  {item.rating && (
+                                    <span className="ml-1 text-yellow-600">
+                                      ⭐ {item.rating}/5
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                         <p className="text-xs text-gray-400">
                           {formatDate(feedback.createdAt)}

@@ -16,6 +16,7 @@ import {
   ShoppingCartIcon,
   CogIcon,
   UserIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Dashboard", href: "/admin", icon: HomeIcon, current: true },
   { name: "Tables & QR", href: "/admin/tables", icon: QrCodeIcon, current: false },
   { name: "Menu", href: "/admin/menu", icon: ClipboardDocumentListIcon, current: false },
+  { name: "Analytics Plats", href: "/admin/menu-analytics", icon: ChartBarIcon, current: false },
   { name: "Commandes", href: "/admin/orders", icon: ShoppingCartIcon, current: false },
   { name: "Réservations", href: "/admin/reservations", icon: CalendarIcon, current: false },
   { name: "Avis", href: "/admin/feedbacks", icon: StarIcon, current: false },
