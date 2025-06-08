@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "@/trpc/react";
 
 export default function FeedbackPage() {
@@ -13,16 +13,20 @@ export default function FeedbackPage() {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [selectedMenuItems, setSelectedMenuItems] = useState<Array<{
-    menuItemId: string;
-    rating?: number;
-    comment?: string;
-  }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentMention, setCurrentMention] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [mentionPosition, setMentionPosition] = useState(0);
+  const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([]);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Get restaurant info
   const { data: restaurant } = api.restaurant.getBySlug.useQuery({ slug: restaurantSlug });
   
-  // Get menu items for tagging
+  // Get menu items for mentions
   const { data: menuItems = [] } = api.menu.getItems.useQuery(
     { restaurantId: restaurant?.id || "" },
     { enabled: !!restaurant?.id }
@@ -38,50 +42,141 @@ export default function FeedbackPage() {
     },
   });
 
+  // Parse mentions from comment text
+  const parseMentions = (text: string) => {
+    const mentionRegex = /@([^@\s]+(?:\s+[^@\s]+)*?)(?=\s|$|@)/g;
+    const mentions: Array<{
+      menuItemId: string;
+      rating?: number;
+      comment?: string;
+    }> = [];
+    
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const mentionedName = match[1].trim();
+      const menuItem = menuItems.find((item: any) => 
+        item.name.toLowerCase().includes(mentionedName.toLowerCase()) ||
+        mentionedName.toLowerCase().includes(item.name.toLowerCase())
+      );
+      
+      if (menuItem && !mentions.find(m => m.menuItemId === menuItem.id)) {
+        mentions.push({
+          menuItemId: menuItem.id,
+          comment: `Mentionné dans le commentaire`
+        });
+      }
+    }
+    
+    return mentions;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating > 0 && restaurant?.id) {
+      const mentionedItems = parseMentions(comment);
+      
       createFeedbackMutation.mutate({
         rating,
         comment: comment || undefined,
         restaurantId: restaurant.id,
         tableId,
-        menuItems: selectedMenuItems.length > 0 ? selectedMenuItems : undefined,
+        menuItems: mentionedItems.length > 0 ? mentionedItems : undefined,
       });
     }
   };
 
-  const toggleMenuItem = (menuItemId: string, menuItemName: string) => {
-    setSelectedMenuItems(prev => {
-      const exists = prev.find(item => item.menuItemId === menuItemId);
-      if (exists) {
-        // Retirer le plat
-        return prev.filter(item => item.menuItemId !== menuItemId);
+  // Handle textarea input for mentions
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    
+    setComment(value);
+    setCursorPosition(cursorPos);
+    
+    // Check if we're typing a mention
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      
+      // Check if there's no space after @
+      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
+        setCurrentMention(textAfterAt);
+        setMentionPosition(lastAtIndex);
+        setShowSuggestions(true);
+        
+        // Filter menu items based on current mention
+        const filtered = menuItems.filter((item: any) =>
+          item.name.toLowerCase().includes(textAfterAt.toLowerCase())
+        ).slice(0, 5); // Limit to 5 suggestions
+        
+        setFilteredMenuItems(filtered);
+        setActiveSuggestionIndex(0);
       } else {
-        // Ajouter le plat
-        return [...prev, { menuItemId }];
+        setShowSuggestions(false);
       }
-    });
+    } else {
+      setShowSuggestions(false);
+    }
   };
 
-  const updateMenuItemRating = (menuItemId: string, rating: number) => {
-    setSelectedMenuItems(prev => 
-      prev.map(item => 
-        item.menuItemId === menuItemId 
-          ? { ...item, rating }
-          : item
-      )
-    );
+  // Handle keyboard navigation in suggestions
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSuggestions || filteredMenuItems.length === 0) return;
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setActiveSuggestionIndex(prev => 
+          prev < filteredMenuItems.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setActiveSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : filteredMenuItems.length - 1
+        );
+        break;
+      case 'Enter':
+      case 'Tab':
+        if (filteredMenuItems[activeSuggestionIndex]) {
+          e.preventDefault();
+          insertMention(filteredMenuItems[activeSuggestionIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        break;
+    }
   };
 
-  const updateMenuItemComment = (menuItemId: string, comment: string) => {
-    setSelectedMenuItems(prev => 
-      prev.map(item => 
-        item.menuItemId === menuItemId 
-          ? { ...item, comment }
-          : item
-      )
-    );
+  // Insert selected mention
+  const insertMention = (menuItem: any) => {
+    const beforeMention = comment.substring(0, mentionPosition);
+    const afterCursor = comment.substring(cursorPosition);
+    const newComment = beforeMention + `@${menuItem.name} ` + afterCursor;
+    
+    setComment(newComment);
+    setShowSuggestions(false);
+    setCurrentMention("");
+    
+    // Focus and set cursor position after the mention
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const newCursorPos = beforeMention.length + menuItem.name.length + 2;
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  // Get mentioned items for display
+  const getMentionedItems = () => {
+    return parseMentions(comment).map(mention => {
+      const menuItem = menuItems.find((item: any) => item.id === mention.menuItemId);
+      return menuItem ? menuItem.name : null;
+    }).filter(Boolean);
   };
 
   if (!restaurant) {
@@ -169,104 +264,72 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            {/* Menu Items Tagging */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Quels plats avez-vous goûtés ? (optionnel)
+            {/* Enhanced Comment with Mentions */}
+            <div className="relative">
+              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
+                Partagez votre expérience
               </label>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {menuItems.map((item: any) => {
-                  const isSelected = selectedMenuItems.find(selected => selected.menuItemId === item.id);
-                  return (
-                    <div key={item.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`item-${item.id}`}
-                        checked={!!isSelected}
-                        onChange={() => toggleMenuItem(item.id, item.name)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor={`item-${item.id}`} className="ml-2 text-sm text-gray-700">
-                        {item.name} 
-                        {item.category && (
-                          <span className="text-gray-500 ml-1">({item.category.name})</span>
-                        )}
-                      </label>
-                    </div>
-                  );
-                })}
+              <div className="mb-2">
+                <p className="text-xs text-gray-500">
+                  💡 Tapez <span className="bg-gray-100 px-1 rounded font-mono">@</span> suivi du nom d'un plat pour le mentionner
+                </p>
               </div>
               
-              {/* Detailed ratings for selected items */}
-              {selectedMenuItems.length > 0 && (
-                <div className="mt-4 space-y-4 border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-700">
-                    Évaluez vos plats sélectionnés :
-                  </h4>
-                  {selectedMenuItems.map((selectedItem) => {
-                    const menuItem = menuItems.find((item: any) => item.id === selectedItem.menuItemId);
-                    if (!menuItem) return null;
-                    
-                    return (
-                      <div key={selectedItem.menuItemId} className="bg-gray-50 p-3 rounded-lg">
-                        <div className="text-sm font-medium text-gray-900 mb-2">
-                          {menuItem.name}
-                        </div>
-                        
-                        {/* Rating pour ce plat */}
-                        <div className="mb-2">
-                          <label className="block text-xs text-gray-600 mb-1">Note :</label>
-                          <div className="flex space-x-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={() => updateMenuItemRating(selectedItem.menuItemId, star)}
-                                className={`w-6 h-6 ${
-                                  star <= (selectedItem.rating || 0)
-                                    ? "text-yellow-400"
-                                    : "text-gray-300 hover:text-yellow-300"
-                                } transition-colors`}
-                              >
-                                <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                </svg>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Commentaire pour ce plat */}
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Commentaire :</label>
-                          <input
-                            type="text"
-                            value={selectedItem.comment || ""}
-                            onChange={(e) => updateMenuItemComment(selectedItem.menuItemId, e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Votre avis sur ce plat..."
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  id="comment"
+                  rows={4}
+                  value={comment}
+                  onChange={handleCommentChange}
+                  onKeyDown={handleKeyDown}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Partagez votre expérience... Vous pouvez mentionner des plats avec @ (ex: @Pizza Margherita était délicieuse !)"
+                />
+                
+                {/* Suggestions dropdown */}
+                {showSuggestions && filteredMenuItems.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto"
+                  >
+                    {filteredMenuItems.map((item, index) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => insertMention(item)}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
+                          index === activeSuggestionIndex ? 'bg-indigo-50 text-indigo-900' : 'text-gray-900'
+                        }`}
+                      >
+                        <div className="font-medium">{item.name}</div>
+                        {item.category && (
+                          <div className="text-xs text-gray-500">{item.category.name}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Display mentioned items */}
+              {getMentionedItems().length > 0 && (
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-900 mb-2">
+                    Plats mentionnés :
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {getMentionedItems().map((itemName, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                      >
+                        {itemName}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* Comment */}
-            <div>
-              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
-                Commentaire général (optionnel)
-              </label>
-              <textarea
-                id="comment"
-                rows={4}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Partagez votre expérience globale avec nous..."
-              />
             </div>
 
             {/* Submit Button */}
