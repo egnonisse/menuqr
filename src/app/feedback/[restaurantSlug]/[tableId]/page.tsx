@@ -53,7 +53,9 @@ export default function FeedbackPage() {
     
     let match;
     while ((match = mentionRegex.exec(text)) !== null) {
-      const mentionedName = match[1].trim();
+      const mentionedName = match[1]?.trim();
+      if (!mentionedName) continue;
+      
       const menuItem = menuItems.find((item: any) => 
         item.name.toLowerCase().includes(mentionedName.toLowerCase()) ||
         mentionedName.toLowerCase().includes(item.name.toLowerCase())

@@ -1,5 +1,130 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
+# Processus Post-Mise à Jour Standard - MenuQR
+
+Ce document décrit le workflow obligatoire à suivre après chaque modification du code pour assurer la qualité et le déploiement correct de l'application MenuQR.
+
+## **Workflow Obligatoire**
+
+### **1. 🧪 Test Local (OBLIGATOIRE)**
+```bash
+npm run dev
+```
+- **Vérifier** que l'application démarre sans erreur
+- **Tester** les nouvelles fonctionnalités implémentées
+- **S'assurer** qu'aucune régression n'a été introduite
+- **Confirmer** que l'interface fonctionne correctement
+
+### **2. 📋 Validation Git**
+```bash
+git status
+```
+- **Examiner** tous les fichiers modifiés
+- **Vérifier** qu'aucun fichier indésirable n'est inclus (.env, node_modules, etc.)
+- **Stagé** les changements appropriés :
+```bash
+git add .
+# OU pour être plus sélectif :
+git add src/specific/file.tsx
+```
+
+### **3. 💬 Commit avec Message Descriptif**
+```bash
+git commit -m "type: description claire de la modification"
+```
+
+**Format des messages de commit :**
+- `feat:` - Nouvelle fonctionnalité
+- `fix:` - Correction de bug
+- `refactor:` - Refactorisation sans changement fonctionnel
+- `style:` - Changements de style/UI
+- `docs:` - Mise à jour de documentation
+- `chore:` - Tâches de maintenance
+
+**Exemple de bons messages :**
+- `feat: Add @ mentions system for dish feedback`
+- `fix: Resolve Prisma connection timeout issue`
+- `refactor: Simplify feedback form UI components`
+
+### **4. 🚀 Push vers GitHub**
+```bash
+git push origin main
+```
+- **Synchroniser** avec le repository distant
+- **Déclencher** le pipeline de déploiement automatique
+
+### **5. ⏳ Surveillance Déploiement Vercel**
+- **Surveiller** le build automatique sur Vercel
+- **Vérifier** qu'aucune erreur de build n'apparaît
+- **Attendre** la fin du déploiement (généralement 1-3 minutes)
+
+### **6. ✅ Validation Production**
+- **Tester** l'URL de production : `https://menuqr-restaurant-*.vercel.app`
+- **Vérifier** que les changements sont bien visibles
+- **Confirmer** le bon fonctionnement des nouvelles fonctionnalités
+- **Tester** sur mobile si applicable
+
+## **Règles Importantes**
+
+### **🚫 Ne JAMAIS :**
+- Commiter sans tester localement
+- Pusher avec des erreurs de compilation
+- Déployer sans vérifier la production
+- Oublier de tester sur différentes tailles d'écran
+- Commiter des fichiers de configuration sensibles (.env)
+
+### **✅ TOUJOURS :**
+- Tester en local AVANT de commiter
+- Écrire des messages de commit clairs
+- Vérifier le déploiement en production
+- Documenter les changements majeurs
+- Informer l'utilisateur du statut du déploiement
+
+## **Checklist Rapide**
+
+Avant de dire "C'est terminé" :
+
+- [ ] ✅ Test local réussi (`npm run dev`)
+- [ ] ✅ Git status vérifié
+- [ ] ✅ Commit avec message descriptif
+- [ ] ✅ Push vers GitHub effectué
+- [ ] ✅ Build Vercel surveillé
+- [ ] ✅ Production testée et validée
+- [ ] ✅ Utilisateur informé du succès
+
+## **En Cas de Problème**
+
+### **Erreur de Build Local**
+1. Vérifier les erreurs TypeScript
+2. Contrôler les imports manquants
+3. Valider la syntaxe des composants React
+
+### **Échec de Déploiement Vercel**
+1. Consulter les logs de build sur Vercel
+2. Vérifier les variables d'environnement
+3. Tester une version simplifiée en local
+
+### **Problème en Production**
+1. Rollback rapide si nécessaire
+2. Investiguer les différences entre local et prod
+3. Vérifier la base de données et les API
+
+## **Communication avec l'Utilisateur**
+
+### **Pendant le Processus :**
+- "Je teste les modifications en local..."
+- "Déploiement en cours sur Vercel..."
+- "Validation de la production..."
+
+### **À la Fin :**
+- "✅ Déployé avec succès ! URL de production : [lien]"
+- "🔗 Vérifiez à cette adresse : [URL]"
+- "Les nouvelles fonctionnalités sont maintenant live !"
+
+---
+
+**Ce processus garantit la qualité et la fiabilité de chaque mise à jour de MenuQR.**
+
