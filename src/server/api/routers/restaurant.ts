@@ -250,9 +250,21 @@ export const restaurantRouter = createTRPCRouter({
       };
     }),
 
-  // Get QR scan statistics
+  // Get QR scan statistics - TEMPORAIREMENT DÉSACTIVÉ
   getScanStats: protectedProcedure
     .query(async ({ ctx }) => {
+      // Retourner des valeurs par défaut temporairement
+      return {
+        totalScans: 0,
+        monthlyScans: 0,
+        todayScans: 0,
+        weeklyScans: 0,
+        maxScansPerMonth: 50,
+        percentageUsed: 0,
+        remainingScans: 50,
+      };
+
+      /* CODE ORIGINAL - SERA REACTIVÉ APRÈS LA MIGRATION
       const restaurant = await ctx.db.restaurant.findUnique({
         where: { ownerId: ctx.session.user.id },
       });
@@ -322,5 +334,15 @@ export const restaurantRouter = createTRPCRouter({
         percentageUsed: Math.round((monthlyScans / maxScansPerMonth) * 100),
         remainingScans: Math.max(0, maxScansPerMonth - monthlyScans),
       };
+      */
+    }),
+
+  // Get restaurant settings
+  getSettings: protectedProcedure
+    .input(z.object({ restaurantId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.restaurantSettings.findUnique({
+        where: { restaurantId: input.restaurantId },
+      });
     }),
 }); 

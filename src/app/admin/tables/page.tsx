@@ -22,6 +22,12 @@ export default function TablesPage() {
     { enabled: !!session }
   );
 
+  // Get restaurant settings for logo
+  const { data: restaurantSettings } = api.restaurant.getSettings.useQuery(
+    { restaurantId: restaurant?.id || "" },
+    { enabled: !!restaurant?.id }
+  );
+
   // tRPC queries
   const { data: tables = [], refetch: refetchTables } = api.tables.getAll.useQuery(
     { restaurantId: restaurant?.id || "" },
@@ -326,6 +332,8 @@ export default function TablesPage() {
                     size={200}
                     title={`Table ${selectedTable.number}`}
                     subtitle={`Scannez ce QR code pour accéder au menu`}
+                    restaurantLogo={restaurantSettings?.logoUrl}
+                    restaurantName={restaurant?.name}
                   />
                 </div>
                 

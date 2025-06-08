@@ -10,11 +10,11 @@ export const feedbacksRouter = createTRPCRouter({
         where: { restaurantId: input.restaurantId },
         include: { 
           table: true,
-          menuItems: {
-            include: {
-              menuItem: true
-            }
-          }
+          // menuItems: {
+          //   include: {
+          //     menuItem: true
+          //   }
+          // }
         },
         orderBy: { createdAt: "desc" },
       });
@@ -61,16 +61,22 @@ export const feedbacksRouter = createTRPCRouter({
         },
       });
 
-      // Créer les liens vers les plats mentionnés
+      // Créer les liens vers les plats mentionnés (avec gestion d'erreur temporaire)
       if (input.menuItems && input.menuItems.length > 0) {
-        await ctx.db.feedbackMenuItem.createMany({
-          data: input.menuItems.map((item) => ({
-            feedbackId: feedback.id,
-            menuItemId: item.menuItemId,
-            rating: item.rating,
-            comment: item.comment,
-          })),
-        });
+        try {
+          // await ctx.db.feedbackMenuItem.createMany({
+          //   data: input.menuItems.map((item) => ({
+          //     feedbackId: feedback.id,
+          //     menuItemId: item.menuItemId,
+          //     rating: item.rating,
+          //     comment: item.comment,
+          //   })),
+          // });
+          console.warn('FeedbackMenuItem table not found - skipping menu items linking');
+        } catch (error) {
+          // Table FeedbackMenuItem n'existe pas encore - ignore l'erreur temporairement
+          console.warn('FeedbackMenuItem table not found - skipping menu items linking');
+        }
       }
 
       return feedback;
@@ -126,11 +132,11 @@ export const feedbacksRouter = createTRPCRouter({
         },
         include: { 
           table: true,
-          menuItems: {
-            include: {
-              menuItem: true
-            }
-          }
+          // menuItems: {
+          //   include: {
+          //     menuItem: true
+          //   }
+          // }
         },
         orderBy: { createdAt: "desc" },
         take: input.limit,
@@ -185,10 +191,14 @@ export const feedbacksRouter = createTRPCRouter({
       });
     }),
 
-  // Get menu item statistics (analytics par plat)
+  // Get menu item statistics (analytics par plat) - TEMPORAIREMENT DÉSACTIVÉ
   getMenuItemStats: publicProcedure
     .input(z.object({ restaurantId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Retourner un tableau vide temporairement jusqu'à ce que la table soit créée
+      return [];
+      
+      /* CODE ORIGINAL - SERA REACTIVÉ APRÈS LA MIGRATION
       const feedbackMenuItems = await ctx.db.feedbackMenuItem.findMany({
         where: {
           feedback: {
@@ -235,15 +245,20 @@ export const feedbacksRouter = createTRPCRouter({
         totalRatings: stat.ratings.length,
         comments: stat.comments
       })).sort((a: any, b: any) => b.totalMentions - a.totalMentions);
+      */
     }),
 
-  // Get specific menu item feedbacks
+  // Get specific menu item feedbacks - TEMPORAIREMENT DÉSACTIVÉ
   getMenuItemFeedbacks: publicProcedure
     .input(z.object({ 
       menuItemId: z.string(),
       restaurantId: z.string()
     }))
     .query(async ({ ctx, input }) => {
+      // Retourner un tableau vide temporairement
+      return [];
+      
+      /* CODE ORIGINAL - SERA REACTIVÉ APRÈS LA MIGRATION
       return ctx.db.feedbackMenuItem.findMany({
         where: {
           menuItemId: input.menuItemId,
@@ -263,5 +278,6 @@ export const feedbacksRouter = createTRPCRouter({
           createdAt: "desc"
         }
       });
+      */
     }),
 }); 

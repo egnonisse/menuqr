@@ -9,6 +9,8 @@ interface QrCodeGeneratorProps {
   size?: number;
   title: string;
   subtitle?: string;
+  restaurantLogo?: string | null;
+  restaurantName?: string;
 }
 
 const PAPER_SIZES = {
@@ -20,7 +22,7 @@ const PAPER_SIZES = {
   "A10": { width: "26mm", height: "37mm", name: "A10 (26 × 37 mm)" },
 } as const;
 
-export default function QrCodeGenerator({ value, size = 200, title, subtitle }: QrCodeGeneratorProps) {
+export default function QrCodeGenerator({ value, size = 200, title, subtitle, restaurantLogo, restaurantName }: QrCodeGeneratorProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<keyof typeof PAPER_SIZES>("A5");
   const [showPrintOptions, setShowPrintOptions] = useState(false);
@@ -109,12 +111,17 @@ export default function QrCodeGenerator({ value, size = 200, title, subtitle }: 
         </head>
         <body>
           <div class="qr-container">
-            <div class="title">${title}</div>
+            ${restaurantLogo ? `
+              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                <img src="${restaurantLogo}" alt="Logo" style="width: 40px; height: 40px; margin-right: 10px; border-radius: 50%; object-fit: cover;" />
+                <div class="title" style="margin: 0;">${restaurantName || ''}</div>
+              </div>
+            ` : restaurantName ? `<div class="title">${restaurantName}</div>` : ''}
+            <div class="title" style="font-size: 16px; color: #666; margin-bottom: 15px;">${title}</div>
             ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
             <div class="qr-image">
               <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 150px; height: 150px;" />
             </div>
-            <div class="url">${value}</div>
             <div class="footer">Powered by MenuQR</div>
           </div>
         </body>
