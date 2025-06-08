@@ -24,7 +24,11 @@ export default function AdminDashboard() {
     { enabled: !!restaurant }
   );
 
-
+  // Get QR scan stats
+  const { data: scanStats } = api.restaurant.getScanStats.useQuery(
+    undefined,
+    { enabled: !!restaurant }
+  );
 
   // Show loading state while checking session and restaurant
   if (!session || isLoadingRestaurant) {
@@ -82,7 +86,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats overview */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -175,6 +179,56 @@ export default function AdminDashboard() {
                     </dd>
                   </dl>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* QR Scans Card with Gauge */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h4M4 8h4m4 0V4m0 0h4m-4 0v4M8 4h4" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <dt className="text-sm font-medium text-gray-500">
+                      Scans QR ce mois
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {scanStats?.monthlyScans || 0} / {scanStats?.maxScansPerMonth || 50}
+                    </dd>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500">
+                    {scanStats?.percentageUsed || 0}%
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                <div 
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    (scanStats?.percentageUsed || 0) >= 90 
+                      ? 'bg-red-500' 
+                      : (scanStats?.percentageUsed || 0) >= 75 
+                      ? 'bg-yellow-500' 
+                      : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${Math.min(scanStats?.percentageUsed || 0, 100)}%` }}
+                ></div>
+              </div>
+              
+              {/* Additional Stats */}
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>Aujourd'hui: {scanStats?.todayScans || 0}</span>
+                <span>Total: {scanStats?.totalScans || 0}</span>
               </div>
             </div>
           </div>

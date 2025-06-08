@@ -249,4 +249,78 @@ export const restaurantRouter = createTRPCRouter({
         feedbacks: feedbacksCount,
       };
     }),
+
+  // Get QR scan statistics
+  getScanStats: protectedProcedure
+    .query(async ({ ctx }) => {
+      const restaurant = await ctx.db.restaurant.findUnique({
+        where: { ownerId: ctx.session.user.id },
+      });
+
+      if (!restaurant) {
+        throw new Error("Restaurant not found");
+      }
+
+      // Get current month start and end
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      const [totalScans, monthlyScans, todayScans, weeklyScans] = await Promise.all([
+        // Total scans all time
+        ctx.db.qRScan.count({
+          where: { restaurantId: restaurant.id },
+        }),
+        // Scans this month
+        ctx.db.qRScan.count({
+          where: {
+            restaurantId: restaurant.id,
+            scannedAt: {
+              gte: monthStart,
+              lte: monthEnd,
+            },
+          },
+        }),
+        // Scans today
+        ctx.db.qRScan.count({
+          where: {
+            restaurantId: restaurant.id,
+            scannedAt: {
+              gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+              lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+            },
+          },
+        }),
+        // Scans this week
+        ctx.db.qRScan.count({
+          where: {
+            restaurantId: restaurant.id,
+            scannedAt: {
+              gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      ]);
+
+      // Get user's subscription limits
+      const userStats = await ctx.db.usageStats.findUnique({
+        where: { userId: ctx.session.user.id },
+      });
+
+      const subscription = await ctx.db.subscription.findUnique({
+        where: { userId: ctx.session.user.id },
+      });
+
+      const maxScansPerMonth = subscription?.maxScansPerMonth ?? 50; // Default to freemium limit
+
+      return {
+        totalScans,
+        monthlyScans,
+        todayScans,
+        weeklyScans,
+        maxScansPerMonth,
+        percentageUsed: Math.round((monthlyScans / maxScansPerMonth) * 100),
+        remainingScans: Math.max(0, maxScansPerMonth - monthlyScans),
+      };
+    }),
 }); 
