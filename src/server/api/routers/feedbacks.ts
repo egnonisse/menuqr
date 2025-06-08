@@ -37,13 +37,27 @@ export const feedbacksRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Vérifier si la table existe avant de l'assigner
+      let validTableId = null;
+      if (input.tableId) {
+        const tableExists = await ctx.db.table.findFirst({
+          where: { 
+            id: input.tableId,
+            restaurantId: input.restaurantId 
+          }
+        });
+        if (tableExists) {
+          validTableId = input.tableId;
+        }
+      }
+
       const feedback = await ctx.db.feedback.create({
         data: {
           rating: input.rating,
           comment: input.comment,
           customerName: input.customerName,
           restaurantId: input.restaurantId,
-          tableId: input.tableId,
+          tableId: validTableId,
         },
       });
 
