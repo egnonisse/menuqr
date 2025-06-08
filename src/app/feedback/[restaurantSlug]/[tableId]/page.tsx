@@ -35,10 +35,16 @@ export default function FeedbackPage() {
   // Create feedback mutation
   const createFeedbackMutation = api.feedbacks.create.useMutation({
     onSuccess: () => {
+      console.log('Feedback submitted successfully');
       setIsSubmitted(true);
       setTimeout(() => {
         router.push(`/menu/${restaurantSlug}/${tableId}`);
       }, 3000);
+    },
+    onError: (error) => {
+      console.error('Error submitting feedback:', error);
+      console.error('Error details:', error.message);
+      console.error('Error data:', error.data);
     },
   });
 
@@ -76,6 +82,10 @@ export default function FeedbackPage() {
     e.preventDefault();
     if (rating > 0 && restaurant?.id) {
       const mentionedItems = parseMentions(comment);
+      
+      // Debug logging
+      console.log('Submitting feedback with mentioned items:', mentionedItems);
+      console.log('Available menuItems:', menuItems.map(item => ({ id: item.id, name: item.name })));
       
       createFeedbackMutation.mutate({
         rating,
