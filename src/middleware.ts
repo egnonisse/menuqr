@@ -1,4 +1,7 @@
-import { auth } from "@/server/auth";
+import NextAuth from "next-auth";
+import { authConfigEdge } from "@/server/auth/config-edge";
+
+const { auth } = NextAuth(authConfigEdge);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

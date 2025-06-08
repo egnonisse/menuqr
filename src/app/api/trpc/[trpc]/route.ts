@@ -32,3 +32,6 @@ const handler = (req: NextRequest) =>
 	});
 
 export { handler as GET, handler as POST };
+
+// Force Node.js runtime for tRPC routes (Prisma compatibility)
+export const runtime = 'nodejs';

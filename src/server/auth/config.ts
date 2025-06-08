@@ -32,6 +32,7 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
+	adapter: PrismaAdapter(db),
 	providers: [
 		CredentialsProvider({
 			name: "credentials",
