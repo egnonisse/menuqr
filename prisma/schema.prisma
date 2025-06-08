@@ -43,18 +43,20 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
+    id            String        @id @default(cuid())
     name          String?
-    email         String    @unique
+    email         String        @unique
     password      String?
     emailVerified DateTime?
     image         String?
     accounts      Account[]
     sessions      Session[]
     restaurant    Restaurant?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    ownerId       String?   @unique
+    subscription  Subscription?
+    usageStats    UsageStats?
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
+    ownerId       String?       @unique
 }
 
 model VerificationToken {
@@ -83,6 +85,7 @@ model Restaurant {
     feedbacks    Feedback[]
     settings     RestaurantSettings?
     orders       Order[]
+    qrScans      QRScan[]           // Tracking des scans QR
     owner        User                @relation(fields: [ownerId], references: [id])
     ownerId      String              @unique
     createdAt    DateTime            @default(now())
@@ -232,4 +235,64 @@ model FeedbackMenuItem {
     createdAt    DateTime @default(now())
     
     @@unique([feedbackId, menuItemId]) // Un plat ne peut être mentionné qu'une fois par avis
+}
+
+// Système de tarification et abonnements
+model Subscription {
+    id                String   @id @default(cuid())
+    user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId            String   @unique
+    plan              Plan     @default(FREEMIUM)
+    status            SubscriptionStatus @default(ACTIVE)
+    stripeCustomerId  String?  // ID client Stripe
+    stripeSubscriptionId String? // ID abonnement Stripe
+    currentPeriodStart DateTime?
+    currentPeriodEnd   DateTime?
+    cancelAtPeriodEnd  Boolean  @default(false)
+    maxRestaurants    Int      @default(1)
+    maxScansPerMonth  Int      @default(50)
+    features          Json?    // Fonctionnalités activées pour ce plan
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+}
+
+model UsageStats {
+    id              String   @id @default(cuid())
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId          String   @unique
+    scansThisMonth  Int      @default(0)
+    scansTotal      Int      @default(0)
+    restaurantCount Int      @default(0)
+    lastScanAt      DateTime?
+    resetAt         DateTime @default(now()) // Date de reset mensuel
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+}
+
+model QRScan {
+    id           String     @id @default(cuid())
+    restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+    restaurantId String
+    tableId      String?
+    userAgent    String?
+    ipAddress    String?
+    country      String?
+    city         String?
+    scannedAt    DateTime   @default(now())
+}
+
+enum Plan {
+    FREEMIUM  // 0€ - 1 restaurant, 50 scans/mois
+    STARTER   // 15€ - 1 restaurant, commandes + avis
+    GROWTH    // 39€ - 1-3 restaurants, analytics avancés
+    BUSINESS  // 79€ - 4-10 restaurants, multi-sites
+    ENTERPRISE // Sur devis - 10+ restaurants, white-label
+}
+
+enum SubscriptionStatus {
+    ACTIVE
+    INACTIVE
+    PAST_DUE
+    CANCELED
+    UNPAID
 }

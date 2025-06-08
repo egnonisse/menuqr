@@ -2,6 +2,8 @@
 
 import { useSession } from "next-auth/react";
 import { api } from "@/trpc/react";
+import { PlanLimitsCard } from "@/components/subscription/PlanLimitsCard";
+import { AutoSoftLimitNotification } from "@/components/subscription/SoftLimitNotification";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -72,6 +74,11 @@ export default function AdminDashboard() {
           <p className="mt-2 text-sm text-gray-700">
             Vue d'ensemble de {restaurant?.name}
           </p>
+        </div>
+
+        {/* Soft Limit Notifications */}
+        <div className="mb-8">
+          <AutoSoftLimitNotification />
         </div>
 
         {/* Stats overview */}
@@ -174,9 +181,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main content */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Plan Limits Card */}
+          <div className="lg:col-span-1">
+            <PlanLimitsCard />
+          </div>
+
           {/* Welcome card */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white shadow rounded-lg p-6 lg:col-span-2">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               🎉 Bienvenue dans MenuQR !
             </h3>
