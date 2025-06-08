@@ -7,8 +7,7 @@ import { feedbacksRouter } from "@/server/api/routers/feedbacks";
 import { homepageRouter } from "@/server/api/routers/homepage";
 import { settingsRouter } from "@/server/api/routers/settings";
 import { ordersRouter } from "@/server/api/routers/orders";
-import { postRouter } from "@/server/api/routers/post";
-import { reservationRouter } from "@/server/api/routers/reservation";
+
 import { subscriptionRouter } from "@/server/api/routers/subscription";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
@@ -27,8 +26,6 @@ export const appRouter = createTRPCRouter({
 	homepage: homepageRouter,
 	settings: settingsRouter,
 	orders: ordersRouter,
-	post: postRouter,
-	reservation: reservationRouter,
 	subscription: subscriptionRouter,
 });
 

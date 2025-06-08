@@ -190,7 +190,7 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
 };
 
 export function hasFeature(plan: Plan, feature: keyof PlanFeatures): boolean {
-  return PLAN_DETAILS[plan].features[feature];
+  return PLAN_DETAILS[plan].features[feature] ?? false;
 }
 
 export function canCreateRestaurant(plan: Plan, currentCount: number): boolean {

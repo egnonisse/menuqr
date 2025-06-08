@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { CrownIcon } from "@heroicons/react/24/solid";
+import { StarIcon as CrownIcon } from "@heroicons/react/24/solid";
 import { Button } from "@/components/ui/button";
 import { PLAN_DETAILS, formatPrice, getPlanBadgeColor } from "@/lib/subscription";
 import { useSubscription } from "@/hooks/useSubscription";
