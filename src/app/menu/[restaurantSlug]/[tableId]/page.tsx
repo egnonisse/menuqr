@@ -156,7 +156,7 @@ export default function MenuPage() {
   }
 
   const filteredItems = selectedCategory 
-    ? menuItems.filter((item: any) => item.category === selectedCategory)
+    ? menuItems.filter((item: any) => item.category?.name === selectedCategory)
     : menuItems;
 
   return (
