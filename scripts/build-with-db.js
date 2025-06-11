@@ -10,8 +10,13 @@ async function buildWithDatabase() {
     console.log('🔄 Generating Prisma Client...');
     await execAsync('npx prisma generate');
     
-    console.log('💾 Pushing database schema...');
-    await execAsync('npx prisma db push --accept-data-loss --skip-generate');
+    console.log('💾 Pushing database schema with force reset...');
+    try {
+      await execAsync('npx prisma db push --force-reset --accept-data-loss --skip-generate');
+    } catch (dbError) {
+      console.log('⚠️ Force reset failed, trying regular push...');
+      await execAsync('npx prisma db push --accept-data-loss --skip-generate');
+    }
     
     console.log('🚀 Building Next.js application...');
     await execAsync('npx next build');

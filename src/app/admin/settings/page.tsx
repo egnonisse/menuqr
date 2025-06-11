@@ -1,13 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 import ImageUpload from "@/components/ui/image-upload";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { data: settings, isPending: isLoadingSettings } = api.settings.getMine.useQuery();
-  const { data: restaurant, refetch: refetchRestaurant } = api.restaurant.getMine.useQuery();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirection si pas connecté
+  useEffect(() => {
+    if (status === "loading") return; // Attendre que le statut soit déterminé
+    if (!session) {
+      router.push("/auth/signin?callbackUrl=/admin/settings");
+      return;
+    }
+  }, [session, status, router]);
+
+  const { data: settings, isPending: isLoadingSettings } = api.settings.getMine.useQuery(
+    undefined,
+    { enabled: !!session } // Ne lance la requête que si l'utilisateur est connecté
+  );
+  const { data: restaurant, refetch: refetchRestaurant } = api.restaurant.getMine.useQuery(
+    undefined,
+    { enabled: !!session }
+  );
   const updateSettings = api.settings.update.useMutation({
     onSuccess: () => {
       toast.success("✅ Paramètres mis à jour avec succès !", {
