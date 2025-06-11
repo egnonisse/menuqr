@@ -75,7 +75,7 @@ export const feedbacksRouter = createTRPCRouter({
           console.warn('FeedbackMenuItem table not found - skipping menu items linking');
         } catch (error) {
           // Table FeedbackMenuItem n'existe pas encore - ignore l'erreur temporairement
-          console.warn('FeedbackMenuItem table not found - skipping menu items linking');
+          console.warn('FeedbackMenuItem table not found - skipping menu items linking:', error);
         }
       }
 

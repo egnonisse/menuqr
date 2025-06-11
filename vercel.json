@@ -1,0 +1,12 @@
+{
+  "buildCommand": "node scripts/build-with-db.js",
+  "installCommand": "npm install",
+  "env": {
+    "SKIP_ENV_VALIDATION": "1"
+  },
+  "functions": {
+    "app/**": {
+      "maxDuration": 60
+    }
+  }
+} 
