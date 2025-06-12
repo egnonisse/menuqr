@@ -7,7 +7,7 @@ const getDatabaseUrl = () => {
     throw new Error('DATABASE_URL is not defined')
   }
 
-  // Paramètres optimisés pour Vercel
+  // Paramètres optimisés pour Vercel - SANS prepared statements
   const params = new URLSearchParams({
     pg_prepared_statements: 'false',
     connection_limit: '50',
@@ -17,7 +17,9 @@ const getDatabaseUrl = () => {
     idle_timeout: '300'
   })
 
-  return `${baseUrl}?${params.toString()}`
+  // Vérifier si l'URL contient déjà des paramètres
+  const separator = baseUrl.includes('?') ? '&' : '?'
+  return `${baseUrl}${separator}${params.toString()}`
 }
 
 const prismaClientSingleton = () => {
