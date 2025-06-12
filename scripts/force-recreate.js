@@ -28,48 +28,21 @@ async function forceRecreate() {
     console.log('✅ Success! Database recreated');
     
   } catch (error) {
-    console.log('❌ Error:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error during recreation:', error instanceof Error ? error.message : String(error));
     
-    console.log('\n🛠️ Alternative approach:');
-    console.log('1. Go to Supabase dashboard');
-    console.log('2. SQL Editor > New query');
-    console.log('3. Paste the migration SQL manually');
-    console.log('4. Execute the script');
-    
-    // Essayons de créer juste les tables essentielles via SQL direct
-    console.log('\n📝 Essential tables SQL:');
-    console.log(`
--- Core tables creation
-CREATE TABLE IF NOT EXISTS "User" (
-    "id" TEXT NOT NULL,
-    "name" TEXT,
-    "email" TEXT NOT NULL,
-    "password" TEXT,
-    "emailVerified" TIMESTAMP(3),
-    "image" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "ownerId" TEXT,
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
-
-CREATE TABLE IF NOT EXISTS "Restaurant" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "description" TEXT,
-    "address" TEXT,
-    "phone" TEXT,
-    "email" TEXT,
-    "openingHours" JSONB,
-    "ownerId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Restaurant_pkey" PRIMARY KEY ("id")
-);
-    `);
+    // Plan B
+    console.log('🔄 Trying alternative approach...');
+    try {
+      await execAsync('npx prisma migrate deploy');
+      console.log('✅ Alternative approach successful!');
+    } catch (altError) {
+      console.error('❌ Alternative approach failed:', altError instanceof Error ? altError.message : String(altError));
+      console.log('\n💡 Manual solutions:');
+      console.log('1. Check database connection');
+      console.log('2. Verify environment variables');
+      console.log('3. Reset database manually');
+      process.exit(1);
+    }
   }
 }
 

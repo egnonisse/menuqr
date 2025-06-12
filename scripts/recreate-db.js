@@ -31,13 +31,13 @@ async function recreateDatabase() {
       
       console.log('🎉 Toutes les tables sont opérationnelles !');
     } catch (checkError) {
-      console.log('⚠️ Erreur lors de la vérification:', checkError.message);
+      console.log('⚠️ Erreur lors de la vérification:', checkError instanceof Error ? checkError.message : String(checkError));
     } finally {
       await prisma.$disconnect();
     }
     
   } catch (error) {
-    console.error('❌ Erreur lors de la reconstruction:', error.message);
+    console.error('❌ Erreur lors de la reconstruction:', error instanceof Error ? error.message : String(error));
     
     // Tentative alternative
     console.log('🔄 Tentative avec migration deploy...');
@@ -45,7 +45,7 @@ async function recreateDatabase() {
       await execAsync('npx prisma migrate deploy');
       console.log('✅ Migration deploy réussie !');
     } catch (migrateError) {
-      console.error('❌ Migration aussi échouée:', migrateError.message);
+      console.error('❌ Migration aussi échouée:', migrateError instanceof Error ? migrateError.message : String(migrateError));
       console.log('\n💡 Solutions manuelles:');
       console.log('1. Vérifier la connexion Supabase');
       console.log('2. Recréer la base via l\'interface Supabase');
