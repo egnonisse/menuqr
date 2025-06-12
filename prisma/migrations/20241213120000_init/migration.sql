@@ -1,8 +1,8 @@
 -- CreateEnum
-CREATE TYPE "Plan" AS ENUM ('FREEMIUM', 'STARTER', 'GROWTH', 'BUSINESS', 'ENTERPRISE');
+CREATE TYPE "Plan" AS ENUM ('FREE', 'BASIC', 'PREMIUM');
 
 -- CreateEnum
-CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'PAST_DUE', 'CANCELED', 'UNPAID');
+CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'CANCELED', 'PAST_DUE', 'TRIALING');
 
 -- CreateTable
 CREATE TABLE "Account" (
@@ -185,11 +185,11 @@ CREATE TABLE "Order" (
     "id" TEXT NOT NULL,
     "tableNumber" TEXT NOT NULL,
     "customerName" TEXT,
+    "customerPhone" TEXT,
     "status" TEXT NOT NULL DEFAULT 'pending',
+    "total" DOUBLE PRECISION NOT NULL,
     "notes" TEXT,
-    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "restaurantId" TEXT NOT NULL,
-    "tableId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -199,7 +199,7 @@ CREATE TABLE "Order" (
 -- CreateTable
 CREATE TABLE "OrderItem" (
     "id" TEXT NOT NULL,
-    "quantity" INTEGER NOT NULL DEFAULT 1,
+    "quantity" INTEGER NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "notes" TEXT,
     "orderId" TEXT NOT NULL,
@@ -213,11 +213,12 @@ CREATE TABLE "OrderItem" (
 -- CreateTable
 CREATE TABLE "FeedbackMenuItem" (
     "id" TEXT NOT NULL,
-    "feedbackId" TEXT NOT NULL,
-    "menuItemId" TEXT NOT NULL,
     "rating" INTEGER,
     "comment" TEXT,
+    "feedbackId" TEXT NOT NULL,
+    "menuItemId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "FeedbackMenuItem_pkey" PRIMARY KEY ("id")
 );
@@ -225,17 +226,13 @@ CREATE TABLE "FeedbackMenuItem" (
 -- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "plan" "Plan" NOT NULL DEFAULT 'FREEMIUM',
+    "plan" "Plan" NOT NULL DEFAULT 'FREE',
     "status" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
     "stripeCustomerId" TEXT,
     "stripeSubscriptionId" TEXT,
-    "currentPeriodStart" TIMESTAMP(3),
     "currentPeriodEnd" TIMESTAMP(3),
     "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false,
-    "maxRestaurants" INTEGER NOT NULL DEFAULT 1,
-    "maxScansPerMonth" INTEGER NOT NULL DEFAULT 50,
-    "features" JSONB,
+    "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -245,12 +242,12 @@ CREATE TABLE "Subscription" (
 -- CreateTable
 CREATE TABLE "UsageStats" (
     "id" TEXT NOT NULL,
+    "month" TEXT NOT NULL,
+    "qrScans" INTEGER NOT NULL DEFAULT 0,
+    "menuViews" INTEGER NOT NULL DEFAULT 0,
+    "feedbacks" INTEGER NOT NULL DEFAULT 0,
+    "reservations" INTEGER NOT NULL DEFAULT 0,
     "userId" TEXT NOT NULL,
-    "scansThisMonth" INTEGER NOT NULL DEFAULT 0,
-    "scansTotal" INTEGER NOT NULL DEFAULT 0,
-    "restaurantCount" INTEGER NOT NULL DEFAULT 0,
-    "lastScanAt" TIMESTAMP(3),
-    "resetAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -260,13 +257,11 @@ CREATE TABLE "UsageStats" (
 -- CreateTable
 CREATE TABLE "QRScan" (
     "id" TEXT NOT NULL,
-    "restaurantId" TEXT NOT NULL,
-    "tableId" TEXT,
-    "userAgent" TEXT,
+    "tableId" TEXT NOT NULL,
     "ipAddress" TEXT,
-    "country" TEXT,
-    "city" TEXT,
-    "scannedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userAgent" TEXT,
+    "restaurantId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "QRScan_pkey" PRIMARY KEY ("id")
 );
@@ -302,13 +297,10 @@ CREATE UNIQUE INDEX "Homepage_restaurantId_key" ON "Homepage"("restaurantId");
 CREATE UNIQUE INDEX "RestaurantSettings_restaurantId_key" ON "RestaurantSettings"("restaurantId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "FeedbackMenuItem_feedbackId_menuItemId_key" ON "FeedbackMenuItem"("feedbackId", "menuItemId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Subscription_userId_key" ON "Subscription"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UsageStats_userId_key" ON "UsageStats"("userId");
+CREATE UNIQUE INDEX "UsageStats_userId_month_key" ON "UsageStats"("userId", "month");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -350,25 +342,22 @@ ALTER TABLE "RestaurantSettings" ADD CONSTRAINT "RestaurantSettings_restaurantId
 ALTER TABLE "Order" ADD CONSTRAINT "Order_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "Table"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_menuItemId_fkey" FOREIGN KEY ("menuItemId") REFERENCES "MenuItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FeedbackMenuItem" ADD CONSTRAINT "FeedbackMenuItem_feedbackId_fkey" FOREIGN KEY ("feedbackId") REFERENCES "Feedback"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "FeedbackMenuItem" ADD CONSTRAINT "FeedbackMenuItem_feedbackId_fkey" FOREIGN KEY ("feedbackId") REFERENCES "Feedback"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FeedbackMenuItem" ADD CONSTRAINT "FeedbackMenuItem_menuItemId_fkey" FOREIGN KEY ("menuItemId") REFERENCES "MenuItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "FeedbackMenuItem" ADD CONSTRAINT "FeedbackMenuItem_menuItemId_fkey" FOREIGN KEY ("menuItemId") REFERENCES "MenuItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UsageStats" ADD CONSTRAINT "UsageStats_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UsageStats" ADD CONSTRAINT "UsageStats_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "QRScan" ADD CONSTRAINT "QRScan_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE RESTRICT ON UPDATE CASCADE; 

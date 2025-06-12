@@ -10,12 +10,18 @@ async function buildWithDatabase() {
     console.log('🔄 Generating Prisma Client...');
     await execAsync('npx prisma generate');
     
-    console.log('💾 Pushing database schema with force reset...');
+    console.log('📋 Deploying database migrations...');
     try {
-      await execAsync('npx prisma db push --force-reset --accept-data-loss --skip-generate');
-    } catch (dbError) {
-      console.log('⚠️ Force reset failed, trying regular push...');
-      await execAsync('npx prisma db push --accept-data-loss --skip-generate');
+      // Utiliser des migrations au lieu de db push (SAFE pour production)
+      await execAsync('npx prisma migrate deploy');
+    } catch (migrateError) {
+      console.log('⚠️ Migration deploy failed, trying alternative...');
+      console.error('Migration error:', migrateError);
+      
+      // Fallback: Reset connection pool et retry
+      console.log('🔄 Resetting connection and retrying...');
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s
+      await execAsync('npx prisma migrate deploy --force');
     }
     
     console.log('🚀 Building Next.js application...');
