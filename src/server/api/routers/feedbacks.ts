@@ -143,6 +143,33 @@ export const feedbacksRouter = createTRPCRouter({
       });
     }),
 
+  // Get recent feedbacks for admin (all feedbacks, approved and pending)
+  getRecentForAdmin: publicProcedure
+    .input(
+      z.object({
+        restaurantId: z.string(),
+        limit: z.number().default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.feedback.findMany({
+        where: { 
+          restaurantId: input.restaurantId,
+          // Pas de filtre isApproved pour l'admin - afficher tous les avis
+        },
+        include: { 
+          table: true,
+          // menuItems: {
+          //   include: {
+          //     menuItem: true
+          //   }
+          // }
+        },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+    }),
+
   // Get feedback statistics for approved feedbacks only
   getApprovedStats: publicProcedure
     .input(z.object({ restaurantId: z.string() }))
@@ -191,61 +218,65 @@ export const feedbacksRouter = createTRPCRouter({
       });
     }),
 
-  // Get menu item statistics (analytics par plat) - TEMPORAIREMENT DÉSACTIVÉ
+  // Get menu item statistics (analytics par plat) - VERSION SIMPLIFIÉE
   getMenuItemStats: publicProcedure
     .input(z.object({ restaurantId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Retourner un tableau vide temporairement jusqu'à ce que la table soit créée
-      return [];
-      
-      /* CODE ORIGINAL - SERA REACTIVÉ APRÈS LA MIGRATION
-      const feedbackMenuItems = await ctx.db.feedbackMenuItem.findMany({
+      // Version simplifiée utilisant les commentaires des feedbacks
+      const feedbacks = await ctx.db.feedback.findMany({
         where: {
-          feedback: {
-            restaurantId: input.restaurantId,
-            isApproved: true
+          restaurantId: input.restaurantId,
+          isApproved: true,
+          comment: {
+            not: null
           }
         },
         include: {
-          menuItem: true,
-          feedback: true
+          table: true
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
       });
 
-      // Grouper par plat et calculer les stats
-      const itemStats = feedbackMenuItems.reduce((acc: any, item) => {
-        const menuItemId = item.menuItemId;
-        if (!acc[menuItemId]) {
-          acc[menuItemId] = {
-            menuItem: item.menuItem,
-            totalMentions: 0,
-            ratings: [],
-            comments: []
-          };
+      // Récupérer tous les plats du restaurant
+      const menuItems = await ctx.db.menuItem.findMany({
+        where: {
+          restaurantId: input.restaurantId
+        },
+        include: {
+          category: true
         }
-        
-        acc[menuItemId].totalMentions++;
-        if (item.rating) {
-          acc[menuItemId].ratings.push(item.rating);
-        }
-        if (item.comment) {
-          acc[menuItemId].comments.push(item.comment);
-        }
-        
-        return acc;
-      }, {});
+      });
 
-      // Calculer les moyennes et retourner le résultat formaté
-      return Object.values(itemStats).map((stat: any) => ({
-        menuItem: stat.menuItem,
-        totalMentions: stat.totalMentions,
-        averageRating: stat.ratings.length > 0 
-          ? Math.round((stat.ratings.reduce((sum: number, rating: number) => sum + rating, 0) / stat.ratings.length) * 10) / 10
-          : null,
-        totalRatings: stat.ratings.length,
-        comments: stat.comments
-      })).sort((a: any, b: any) => b.totalMentions - a.totalMentions);
-      */
+      // Analyser les mentions de plats dans les commentaires
+      const itemStats = menuItems.map(item => {
+        const mentions = feedbacks.filter(feedback => 
+          feedback.comment?.toLowerCase().includes(item.name.toLowerCase()) ||
+          feedback.comment?.toLowerCase().includes(`@${item.name.toLowerCase()}`)
+        );
+
+        const totalMentions = mentions.length;
+        const averageRating = totalMentions > 0 
+          ? mentions.reduce((sum, feedback) => sum + feedback.rating, 0) / totalMentions
+          : 0;
+
+        const comments = mentions
+          .map(feedback => feedback.comment)
+          .filter(Boolean)
+          .slice(0, 3); // Limiter à 3 commentaires
+
+        return {
+          menuItem: item,
+          totalMentions,
+          averageRating: Math.round(averageRating * 10) / 10,
+          totalRatings: totalMentions,
+          comments
+        };
+      }).filter(stat => stat.totalMentions > 0) // Seulement les plats mentionnés
+        .sort((a, b) => b.totalMentions - a.totalMentions); // Trier par popularité
+
+      return itemStats;
     }),
 
   // Get specific menu item feedbacks - TEMPORAIREMENT DÉSACTIVÉ

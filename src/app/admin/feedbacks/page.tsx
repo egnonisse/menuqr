@@ -25,7 +25,7 @@ export default function FeedbacksPage() {
     { enabled: !!restaurant?.id }
   );
 
-  const { data: recentFeedbacks = [] } = api.feedbacks.getRecent.useQuery(
+  const { data: recentFeedbacks = [] } = api.feedbacks.getRecentForAdmin.useQuery(
     { 
       restaurantId: restaurant?.id || "",
       limit: 5

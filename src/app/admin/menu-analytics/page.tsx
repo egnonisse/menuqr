@@ -69,12 +69,24 @@ export default function MenuAnalyticsPage() {
               Classés par nombre de mentions dans les avis
             </p>
           </div>
+          
           {menuItemStats.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Aucune donnée d'analytics disponible</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Les clients doivent mentionner des plats dans leurs avis
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                <ChartBarIcon className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune donnée d'analytics disponible</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Les analytics apparaîtront quand vos clients mentionneront des plats dans leurs avis
               </p>
+              <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Comment obtenir des analytics ?</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Encouragez vos clients à mentionner des plats spécifiques</li>
+                  <li>• Utilisez la fonction @ dans les avis (ex: @Pizza Margherita)</li>
+                  <li>• Plus d'avis détaillés = plus d'insights utiles</li>
+                </ul>
+              </div>
             </div>
           ) : (
             <ul className="divide-y divide-gray-200">
