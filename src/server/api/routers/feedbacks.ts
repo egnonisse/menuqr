@@ -241,11 +241,6 @@ export const feedbacksRouter = createTRPCRouter({
         include: {
           category: true,
           feedbackItems: {
-            where: {
-              feedback: {
-                isApproved: true
-              }
-            },
             include: {
               feedback: true
             }
@@ -255,7 +250,7 @@ export const feedbacksRouter = createTRPCRouter({
 
       // Calculer les statistiques pour chaque plat
       const itemStats = menuItems.map(item => {
-        const feedbackItems = item.feedbackItems.filter(fi => fi.feedback.isApproved);
+        const feedbackItems = item.feedbackItems; // Inclure tous les feedbacks (approuvés et non approuvés)
         const totalMentions = feedbackItems.length;
         
         if (totalMentions === 0) {
