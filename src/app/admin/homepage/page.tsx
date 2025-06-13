@@ -7,13 +7,11 @@ import {
   PencilIcon, 
   TrashIcon, 
   PlusIcon,
-  StarIcon,
   ShareIcon,
   EyeIcon,
   ClipboardDocumentIcon,
   CheckIcon
 } from "@heroicons/react/24/outline";
-import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 import ImageUpload from "@/components/ui/image-upload";
 
 interface Slider {
@@ -24,13 +22,7 @@ interface Slider {
   order: number;
 }
 
-interface Testimonial {
-  id: string;
-  customerName: string;
-  rating: number;
-  comment: string;
-  order: number;
-}
+
 
 interface SocialLink {
   platform: string;
@@ -39,9 +31,8 @@ interface SocialLink {
 }
 
 export default function HomepagePage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'sliders' | 'testimonials' | 'social'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'sliders' | 'social'>('general');
   const [newSlider, setNewSlider] = useState({ title: '', subtitle: '', imageUrl: '' });
-  const [newTestimonial, setNewTestimonial] = useState({ customerName: '', rating: 5, comment: '' });
   const [presentation, setPresentation] = useState('');
   const [reservationBtnText, setReservationBtnText] = useState('Réserver une table');
   const [address, setAddress] = useState('');
@@ -68,18 +59,11 @@ export default function HomepagePage() {
       setNewSlider({ title: '', subtitle: '', imageUrl: '' });
     },
   });
-  const addTestimonialMutation = api.homepage.addTestimonial.useMutation({
-    onSuccess: () => {
-      void refetch();
-      setNewTestimonial({ customerName: '', rating: 5, comment: '' });
-    },
-  });
+
   const deleteSliderMutation = api.homepage.deleteSlider.useMutation({
     onSuccess: () => void refetch(),
   });
-  const deleteTestimonialMutation = api.homepage.deleteTestimonial.useMutation({
-    onSuccess: () => void refetch(),
-  });
+
 
   // Initialize state from homepage data
   useEffect(() => {
@@ -101,7 +85,6 @@ export default function HomepagePage() {
   }, [restaurant]);
 
   const sliders = (homepage?.sliders as unknown as Slider[]) || [];
-  const testimonials = (homepage?.testimonials as unknown as Testimonial[]) || [];
 
   // Functions for live preview and sharing
   const getMinisiteUrl = () => {
@@ -150,21 +133,9 @@ export default function HomepagePage() {
     }
   };
 
-  const addTestimonial = async () => {
-    if (newTestimonial.customerName && newTestimonial.comment) {
-      await addTestimonialMutation.mutateAsync(newTestimonial);
-    }
-  };
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      i < rating ? (
-        <StarSolidIcon key={i} className="h-5 w-5 text-yellow-400" />
-      ) : (
-        <StarIcon key={i} className="h-5 w-5 text-gray-300" />
-      )
-    ));
-  };
+
+
 
   return (
     <div className="py-6">
@@ -225,7 +196,6 @@ export default function HomepagePage() {
             {[
               { key: 'general', label: 'Général', icon: PencilIcon },
               { key: 'sliders', label: 'Sliders', icon: PhotoIcon },
-              { key: 'testimonials', label: 'Témoignages', icon: StarIcon },
               { key: 'social', label: 'Réseaux sociaux', icon: ShareIcon },
             ].map((tab) => (
               <button
@@ -428,105 +398,7 @@ export default function HomepagePage() {
           </div>
         )}
 
-        {/* Testimonials Tab */}
-        {activeTab === 'testimonials' && (
-          <div className="space-y-6">
-            {/* Add new testimonial */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Ajouter un témoignage
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom du client
-                    </label>
-                    <input
-                      type="text"
-                      value={newTestimonial.customerName}
-                      onChange={(e) => setNewTestimonial({...newTestimonial, customerName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note (1-5 étoiles)
-                    </label>
-                    <select
-                      value={newTestimonial.rating}
-                      onChange={(e) => setNewTestimonial({...newTestimonial, rating: parseInt(e.target.value)})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {[1, 2, 3, 4, 5].map(rating => (
-                        <option key={rating} value={rating}>{rating} étoile{rating > 1 ? 's' : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Commentaire
-                  </label>
-                  <textarea
-                    value={newTestimonial.comment}
-                    onChange={(e) => setNewTestimonial({...newTestimonial, comment: e.target.value})}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Partagez l'expérience du client..."
-                  />
-                </div>
-
-                <button
-                  onClick={addTestimonial}
-                  disabled={addTestimonialMutation.isPending || !newTestimonial.customerName || !newTestimonial.comment}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  {addTestimonialMutation.isPending ? 'Ajout...' : 'Ajouter le témoignage'}
-                </button>
-              </div>
-            </div>
-
-            {/* Existing testimonials */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Témoignages existants ({testimonials.length})
-              </h3>
-              
-              {testimonials.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Aucun témoignage ajouté</p>
-              ) : (
-                <div className="space-y-4">
-                  {testimonials.map((testimonial) => (
-                    <div key={testimonial.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <h4 className="font-medium text-gray-900 mr-2">{testimonial.customerName}</h4>
-                            <div className="flex">
-                              {renderStars(testimonial.rating)}
-                            </div>
-                          </div>
-                          <p className="text-gray-600">{testimonial.comment}</p>
-                        </div>
-                        <button
-                          onClick={() => deleteTestimonialMutation.mutate({ testimonialId: testimonial.id })}
-                          className="text-red-600 hover:text-red-800 ml-4"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Social Links Tab */}
         {activeTab === 'social' && (
