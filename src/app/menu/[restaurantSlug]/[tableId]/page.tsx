@@ -1,10 +1,12 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 import { formatPrice, type Currency } from "@/utils/currency";
 import { toast } from "sonner";
+import Link from "next/link";
+import { ArrowLeft, Home, Info } from "lucide-react";
 
 export default function MenuPage() {
   const params = useParams();
@@ -176,6 +178,49 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navigation Bar */}
+      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Left: Back button */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => window.history.back()}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Retour</span>
+              </button>
+            </div>
+
+            {/* Center: Navigation links */}
+            <div className="flex items-center space-x-2">
+              <Link
+                href={`/${restaurantSlug}`}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <Home className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Accueil</span>
+              </Link>
+              <Link
+                href={`/${restaurantSlug}#about`}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Info className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">À propos</span>
+              </Link>
+            </div>
+
+            {/* Right: Restaurant name */}
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900 truncate max-w-24 sm:max-w-32">
+                {restaurant.name}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-4">

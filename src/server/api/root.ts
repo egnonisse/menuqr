@@ -9,6 +9,7 @@ import { settingsRouter } from "@/server/api/routers/settings";
 import { ordersRouter } from "@/server/api/routers/orders";
 
 import { subscriptionRouter } from "@/server/api/routers/subscription";
+import { demoRouter } from "@/server/api/routers/demo";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
 	settings: settingsRouter,
 	orders: ordersRouter,
 	subscription: subscriptionRouter,
+	demo: demoRouter,
 });
 
 // export type definition of API
