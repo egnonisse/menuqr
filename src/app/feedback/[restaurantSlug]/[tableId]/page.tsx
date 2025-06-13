@@ -3,6 +3,14 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/trpc/react";
+import { StarIcon } from "@heroicons/react/24/solid";
+import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline";
+
+interface SelectedMenuItem {
+  menuItemId: string;
+  rating?: number;
+  comment?: string;
+}
 
 export default function FeedbackPage() {
   const params = useParams();
@@ -20,14 +28,24 @@ export default function FeedbackPage() {
   const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   
+  // Nouvelle interface de sélection de plats
+  const [showMenuItemSelection, setShowMenuItemSelection] = useState(false);
+  const [selectedMenuItems, setSelectedMenuItems] = useState<SelectedMenuItem[]>([]);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Get restaurant info
   const { data: restaurant } = api.restaurant.getBySlug.useQuery({ slug: restaurantSlug });
   
-  // Get menu items for mentions
+  // Get menu items for mentions and selection
   const { data: menuItems = [] } = api.menu.getItems.useQuery(
+    { restaurantId: restaurant?.id || "" },
+    { enabled: !!restaurant?.id }
+  );
+
+  // Get menu items organized by category for selection interface
+  const { data: menuItemsForFeedback = [] } = api.feedbacks.getMenuItemsForFeedback.useQuery(
     { restaurantId: restaurant?.id || "" },
     { enabled: !!restaurant?.id }
   );
@@ -78,24 +96,109 @@ export default function FeedbackPage() {
     return mentions;
   };
 
+  // Combine mentions from text and selected items
+  const getCombinedMenuItems = () => {
+    const mentionsFromText = parseMentions(comment);
+    const allItems = [...selectedMenuItems];
+    
+    // Add mentions from text that aren't already in selected items
+    mentionsFromText.forEach(mention => {
+      if (!allItems.find(item => item.menuItemId === mention.menuItemId)) {
+        allItems.push(mention);
+      }
+    });
+    
+    return allItems;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating > 0 && restaurant?.id) {
-      const mentionedItems = parseMentions(comment);
+      const combinedMenuItems = getCombinedMenuItems();
       
       // Debug logging
-      console.log('Submitting feedback with mentioned items:', mentionedItems);
-      console.log('Available menuItems:', menuItems.map(item => ({ id: item.id, name: item.name })));
+      console.log('Submitting feedback with menu items:', combinedMenuItems);
       
       createFeedbackMutation.mutate({
         rating,
         comment: comment || undefined,
         restaurantId: restaurant.id,
         tableId,
-        menuItems: mentionedItems.length > 0 ? mentionedItems : undefined,
+        menuItems: combinedMenuItems.length > 0 ? combinedMenuItems : undefined,
       });
     }
   };
+
+  // Handle menu item selection
+  const handleMenuItemSelect = (menuItemId: string) => {
+    const isSelected = selectedMenuItems.find(item => item.menuItemId === menuItemId);
+    
+    if (isSelected) {
+      // Remove item
+      setSelectedMenuItems(prev => prev.filter(item => item.menuItemId !== menuItemId));
+    } else {
+      // Add item
+      setSelectedMenuItems(prev => [...prev, { menuItemId }]);
+    }
+  };
+
+  // Handle rating for specific menu item
+  const handleMenuItemRating = (menuItemId: string, rating: number) => {
+    setSelectedMenuItems(prev => 
+      prev.map(item => 
+        item.menuItemId === menuItemId 
+          ? { ...item, rating }
+          : item
+      )
+    );
+  };
+
+  // Handle comment for specific menu item
+  const handleMenuItemComment = (menuItemId: string, comment: string) => {
+    setSelectedMenuItems(prev => 
+      prev.map(item => 
+        item.menuItemId === menuItemId 
+          ? { ...item, comment }
+          : item
+      )
+    );
+  };
+
+  // Render star rating component
+  const renderStarRating = (currentRating: number, onRatingChange: (rating: number) => void, size: "sm" | "md" = "md") => {
+    const starSize = size === "sm" ? "h-4 w-4" : "h-6 w-6";
+    
+    return (
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onRatingChange(star)}
+            className={`${starSize} ${
+              star <= currentRating ? "text-yellow-400" : "text-gray-300"
+            } hover:text-yellow-400 transition-colors`}
+          >
+            {star <= currentRating ? (
+              <StarIcon className={starSize} />
+            ) : (
+              <StarOutlineIcon className={starSize} />
+            )}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  // Group menu items by category
+  const menuItemsByCategory = menuItemsForFeedback.reduce((acc: any, item: any) => {
+    const categoryName = item.category?.name || 'Autres';
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(item);
+    return acc;
+  }, {});
 
   // Handle textarea input for mentions
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -295,29 +398,30 @@ export default function FeedbackPage() {
                   value={comment}
                   onChange={handleCommentChange}
                   onKeyDown={handleKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Partagez votre expérience... Vous pouvez mentionner des plats avec @ (ex: @Pizza Margherita était délicieuse !)"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  placeholder="Décrivez votre expérience... (utilisez @ pour mentionner un plat)"
                 />
                 
                 {/* Suggestions dropdown */}
                 {showSuggestions && filteredMenuItems.length > 0 && (
-                  <div
+                  <div 
                     ref={suggestionsRef}
-                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto"
+                    className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto"
                   >
                     {filteredMenuItems.map((item, index) => (
                       <button
                         key={item.id}
                         type="button"
                         onClick={() => insertMention(item)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
-                          index === activeSuggestionIndex ? 'bg-indigo-50 text-indigo-900' : 'text-gray-900'
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-50 ${
+                          index === activeSuggestionIndex ? 'bg-orange-50 text-orange-900' : ''
                         }`}
                       >
-                        <div className="font-medium">{item.name}</div>
-                        {item.category && (
-                          <div className="text-xs text-gray-500">{item.category.name}</div>
-                        )}
+                        <div className="flex items-center">
+                          <span className="text-sm">{item.category?.emoji}</span>
+                          <span className="ml-2 text-sm font-medium">{item.name}</span>
+                          <span className="ml-auto text-xs text-gray-500">{item.price} FCFA</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -326,15 +430,13 @@ export default function FeedbackPage() {
               
               {/* Display mentioned items */}
               {getMentionedItems().length > 0 && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="text-sm font-medium text-blue-900 mb-2">
-                    Plats mentionnés :
-                  </div>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">Plats mentionnés :</p>
+                  <div className="flex flex-wrap gap-1">
                     {getMentionedItems().map((itemName, index) => (
-                      <span
+                      <span 
                         key={index}
-                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800"
                       >
                         {itemName}
                       </span>
@@ -344,24 +446,116 @@ export default function FeedbackPage() {
               )}
             </div>
 
+            {/* Menu Item Selection Interface */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Évaluer des plats spécifiques (optionnel)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowMenuItemSelection(!showMenuItemSelection)}
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  {showMenuItemSelection ? 'Masquer' : 'Sélectionner des plats'}
+                </button>
+              </div>
+              
+              {showMenuItemSelection && (
+                <div className="border rounded-lg p-4 bg-gray-50 space-y-4">
+                  {Object.entries(menuItemsByCategory).map(([categoryName, items]) => (
+                    <div key={categoryName}>
+                      <h4 className="font-medium text-gray-900 mb-2">{categoryName}</h4>
+                      <div className="space-y-2">
+                        {(items as any[]).map((item) => {
+                          const selectedItem = selectedMenuItems.find(si => si.menuItemId === item.id);
+                          const isSelected = !!selectedItem;
+                          
+                          return (
+                            <div key={item.id} className="bg-white rounded-lg border p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleMenuItemSelect(item.id)}
+                                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                  />
+                                  <div className="ml-3">
+                                    <div className="flex items-center">
+                                      <span className="text-sm">{item.category?.emoji}</span>
+                                      <span className="ml-2 text-sm font-medium text-gray-900">{item.name}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500">{item.price} FCFA</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {isSelected && (
+                                <div className="mt-3 space-y-3 border-t pt-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Note pour ce plat
+                                    </label>
+                                    {renderStarRating(
+                                      selectedItem?.rating || 0,
+                                      (rating) => handleMenuItemRating(item.id, rating),
+                                      "sm"
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Commentaire sur ce plat
+                                    </label>
+                                    <textarea
+                                      rows={2}
+                                      value={selectedItem?.comment || ''}
+                                      onChange={(e) => handleMenuItemComment(item.id, e.target.value)}
+                                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs"
+                                      placeholder={`Votre avis sur ${item.name}...`}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Display selected items summary */}
+              {selectedMenuItems.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-2">Plats sélectionnés :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMenuItems.map((selectedItem) => {
+                      const menuItem = menuItemsForFeedback.find(item => item.id === selectedItem.menuItemId);
+                      return (
+                        <div key={selectedItem.menuItemId} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          <span>{menuItem?.name}</span>
+                          {selectedItem.rating && (
+                            <span className="ml-1 text-yellow-600">⭐ {selectedItem.rating}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={rating === 0 || createFeedbackMutation.isPending}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              {createFeedbackMutation.isPending ? "Envoi en cours..." : "Envoyer mon avis"}
+              {createFeedbackMutation.isPending ? 'Envoi en cours...' : 'Envoyer mon avis'}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <a
-              href={`/menu/${restaurantSlug}/${tableId}`}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              ← Retour au menu
-            </a>
-          </div>
         </div>
       </div>
     </div>

@@ -10,11 +10,15 @@ export const feedbacksRouter = createTRPCRouter({
         where: { restaurantId: input.restaurantId },
         include: { 
           table: true,
-          // menuItems: {
-          //   include: {
-          //     menuItem: true
-          //   }
-          // }
+          menuItems: {
+            include: {
+              menuItem: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
         },
         orderBy: { createdAt: "desc" },
       });
@@ -61,21 +65,20 @@ export const feedbacksRouter = createTRPCRouter({
         },
       });
 
-      // Créer les liens vers les plats mentionnés (avec gestion d'erreur temporaire)
+      // Créer les liens vers les plats mentionnés
       if (input.menuItems && input.menuItems.length > 0) {
         try {
-          // await ctx.db.feedbackMenuItem.createMany({
-          //   data: input.menuItems.map((item) => ({
-          //     feedbackId: feedback.id,
-          //     menuItemId: item.menuItemId,
-          //     rating: item.rating,
-          //     comment: item.comment,
-          //   })),
-          // });
-          console.warn('FeedbackMenuItem table not found - skipping menu items linking');
+          await ctx.db.feedbackMenuItem.createMany({
+            data: input.menuItems.map((item) => ({
+              feedbackId: feedback.id,
+              menuItemId: item.menuItemId,
+              rating: item.rating,
+              comment: item.comment,
+            })),
+          });
         } catch (error) {
-          // Table FeedbackMenuItem n'existe pas encore - ignore l'erreur temporairement
-          console.warn('FeedbackMenuItem table not found - skipping menu items linking:', error);
+          console.error('Error creating FeedbackMenuItem links:', error);
+          // Ne pas faire échouer la création du feedback si les liens échouent
         }
       }
 
@@ -132,11 +135,15 @@ export const feedbacksRouter = createTRPCRouter({
         },
         include: { 
           table: true,
-          // menuItems: {
-          //   include: {
-          //     menuItem: true
-          //   }
-          // }
+          menuItems: {
+            include: {
+              menuItem: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
         },
         orderBy: { createdAt: "desc" },
         take: input.limit,
@@ -159,11 +166,15 @@ export const feedbacksRouter = createTRPCRouter({
         },
         include: { 
           table: true,
-          // menuItems: {
-          //   include: {
-          //     menuItem: true
-          //   }
-          // }
+          menuItems: {
+            include: {
+              menuItem: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
         },
         orderBy: { createdAt: "desc" },
         take: input.limit,
@@ -218,78 +229,83 @@ export const feedbacksRouter = createTRPCRouter({
       });
     }),
 
-  // Get menu item statistics (analytics par plat) - VERSION SIMPLIFIÉE
+  // Get menu item statistics (analytics par plat) - VERSION COMPLÈTE AVEC FeedbackMenuItem
   getMenuItemStats: publicProcedure
     .input(z.object({ restaurantId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Version simplifiée utilisant les commentaires des feedbacks
-      const feedbacks = await ctx.db.feedback.findMany({
-        where: {
-          restaurantId: input.restaurantId,
-          isApproved: true,
-          comment: {
-            not: null
-          }
-        },
-        include: {
-          table: true
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-
       // Récupérer tous les plats du restaurant
       const menuItems = await ctx.db.menuItem.findMany({
         where: {
           restaurantId: input.restaurantId
         },
         include: {
-          category: true
+          category: true,
+          feedbackItems: {
+            where: {
+              feedback: {
+                isApproved: true
+              }
+            },
+            include: {
+              feedback: true
+            }
+          }
         }
       });
 
-      // Analyser les mentions de plats dans les commentaires
+      // Calculer les statistiques pour chaque plat
       const itemStats = menuItems.map(item => {
-        const mentions = feedbacks.filter(feedback => 
-          feedback.comment?.toLowerCase().includes(item.name.toLowerCase()) ||
-          feedback.comment?.toLowerCase().includes(`@${item.name.toLowerCase()}`)
-        );
+        const feedbackItems = item.feedbackItems.filter(fi => fi.feedback.isApproved);
+        const totalMentions = feedbackItems.length;
+        
+        if (totalMentions === 0) {
+          return null; // Sera filtré plus tard
+        }
 
-        const totalMentions = mentions.length;
-        const averageRating = totalMentions > 0 
-          ? mentions.reduce((sum, feedback) => sum + feedback.rating, 0) / totalMentions
+        // Calculer la note moyenne spécifique aux plats (si disponible) sinon utiliser la note globale
+        const ratingsFromItems = feedbackItems
+          .map(fi => fi.rating)
+          .filter(rating => rating !== null) as number[];
+        
+        const ratingsFromFeedbacks = feedbackItems
+          .map(fi => fi.feedback.rating);
+
+        const allRatings = ratingsFromItems.length > 0 ? ratingsFromItems : ratingsFromFeedbacks;
+        const averageRating = allRatings.length > 0 
+          ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
           : 0;
 
-        const comments = mentions
-          .map(feedback => feedback.comment)
-          .filter(Boolean)
-          .slice(0, 3); // Limiter à 3 commentaires
+        // Récupérer les commentaires spécifiques aux plats ou les commentaires généraux
+        const specificComments = feedbackItems
+          .map(fi => fi.comment)
+          .filter(Boolean);
+        
+        const generalComments = feedbackItems
+          .map(fi => fi.feedback.comment)
+          .filter(Boolean);
+
+        const comments = specificComments.length > 0 ? specificComments : generalComments;
 
         return {
           menuItem: item,
           totalMentions,
           averageRating: Math.round(averageRating * 10) / 10,
-          totalRatings: totalMentions,
-          comments
+          totalRatings: allRatings.length,
+          comments: comments.slice(0, 3) // Limiter à 3 commentaires
         };
-      }).filter(stat => stat.totalMentions > 0) // Seulement les plats mentionnés
+      }).filter(stat => stat !== null) // Supprimer les plats sans mentions
         .sort((a, b) => b.totalMentions - a.totalMentions); // Trier par popularité
 
       return itemStats;
     }),
 
-  // Get specific menu item feedbacks - TEMPORAIREMENT DÉSACTIVÉ
+  // Get specific menu item feedbacks - RÉACTIVÉ
   getMenuItemFeedbacks: publicProcedure
     .input(z.object({ 
       menuItemId: z.string(),
       restaurantId: z.string()
     }))
     .query(async ({ ctx, input }) => {
-      // Retourner un tableau vide temporairement
-      return [];
-      
-      /* CODE ORIGINAL - SERA REACTIVÉ APRÈS LA MIGRATION
       return ctx.db.feedbackMenuItem.findMany({
         where: {
           menuItemId: input.menuItemId,
@@ -309,6 +325,46 @@ export const feedbacksRouter = createTRPCRouter({
           createdAt: "desc"
         }
       });
-      */
+    }),
+
+  // Nouvelle fonction : Get menu items for feedback form
+  getMenuItemsForFeedback: publicProcedure
+    .input(z.object({ restaurantId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.menuItem.findMany({
+        where: {
+          restaurantId: input.restaurantId,
+          available: true
+        },
+        include: {
+          category: true
+        },
+        orderBy: [
+          { category: { order: "asc" } },
+          { order: "asc" },
+          { name: "asc" }
+        ]
+      });
+    }),
+
+  // Nouvelle fonction : Get detailed feedback with menu items
+  getDetailedFeedback: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.feedback.findUnique({
+        where: { id: input.id },
+        include: {
+          table: true,
+          menuItems: {
+            include: {
+              menuItem: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
+        }
+      });
     }),
 }); 
