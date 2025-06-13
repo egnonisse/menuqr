@@ -327,25 +327,7 @@ export const feedbacksRouter = createTRPCRouter({
       });
     }),
 
-  // Nouvelle fonction : Get menu items for feedback form
-  getMenuItemsForFeedback: publicProcedure
-    .input(z.object({ restaurantId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.menuItem.findMany({
-        where: {
-          restaurantId: input.restaurantId,
-          available: true
-        },
-        include: {
-          category: true
-        },
-        orderBy: [
-          { category: { order: "asc" } },
-          { order: "asc" },
-          { name: "asc" }
-        ]
-      });
-    }),
+
 
   // Nouvelle fonction : Get detailed feedback with menu items
   getDetailedFeedback: publicProcedure
