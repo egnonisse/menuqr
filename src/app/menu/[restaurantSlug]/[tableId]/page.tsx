@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 import { formatPrice, type Currency } from "@/utils/currency";
 import { toast } from "sonner";
@@ -36,6 +36,21 @@ export default function MenuPage() {
     { restaurantId: restaurant?.id || "" },
     { enabled: !!restaurant?.id }
   );
+
+  // Record QR scan mutation
+  const recordQRScan = api.subscription.recordQRScan.useMutation();
+
+  // Record QR scan when page loads (only for real tables, not preview)
+  useEffect(() => {
+    if (restaurant?.id && tableId !== "preview") {
+      recordQRScan.mutate({
+        restaurantId: restaurant.id,
+        tableId: tableId,
+        userAgent: navigator.userAgent,
+        ipAddress: undefined, // Will be handled server-side if needed
+      });
+    }
+  }, [restaurant?.id, tableId]);
 
   // Create order mutation
   const createOrder = api.orders.create.useMutation({
