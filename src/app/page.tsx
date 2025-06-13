@@ -17,7 +17,7 @@ export default async function Home() {
 				{/* Demo Button */}
 				<div className="text-center">
 					<Link
-						href="/demo-restaurant"
+						href="/demo"
 						className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-6 py-3 font-semibold no-underline transition hover:bg-purple-700"
 					>
 						👀 Voir la démo
