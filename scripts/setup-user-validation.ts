@@ -19,7 +19,7 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-function question(query) {
+function question(query: string): Promise<string> {
   return new Promise((resolve) => {
     rl.question(query, resolve);
   });
@@ -106,22 +106,24 @@ async function main() {
       if (userIndex >= 0 && userIndex < eligibleUsers.length) {
         const selectedUser = eligibleUsers[userIndex];
         
-        const confirm = await question(`\n⚠️  Êtes-vous sûr de vouloir promouvoir "${selectedUser.email}" en super-administrateur? (oui/non): `);
-        
-        if (confirm.toLowerCase() === 'oui' || confirm.toLowerCase() === 'o' || confirm.toLowerCase() === 'yes' || confirm.toLowerCase() === 'y') {
-          await prisma.user.update({
-            where: { id: selectedUser.id },
-            data: {
-              role: 'SUPER_ADMIN',
-              isApproved: true,
-              approvedAt: new Date()
-            }
-          });
+        if (selectedUser) {
+          const confirm = await question(`\n⚠️  Êtes-vous sûr de vouloir promouvoir "${selectedUser.email}" en super-administrateur? (oui/non): `);
+          
+          if (confirm.toLowerCase() === 'oui' || confirm.toLowerCase() === 'o' || confirm.toLowerCase() === 'yes' || confirm.toLowerCase() === 'y') {
+            await prisma.user.update({
+              where: { id: selectedUser.id },
+              data: {
+                role: 'SUPER_ADMIN',
+                isApproved: true,
+                approvedAt: new Date()
+              }
+            });
 
-          console.log(`\n🎉 Succès! ${selectedUser.email} est maintenant super-administrateur!`);
-          console.log('🔐 Cet utilisateur peut maintenant accéder à /admin/users pour valider d\'autres comptes.');
-        } else {
-          console.log('\n❌ Promotion annulée.');
+              console.log(`\n🎉 Succès! ${selectedUser.email} est maintenant super-administrateur!`);
+            console.log('🔐 Cet utilisateur peut maintenant accéder à /admin/users pour valider d\'autres comptes.');
+          } else {
+            console.log('\n❌ Promotion annulée.');
+          }
         }
       } else {
         console.log('\n❌ Choix invalide.');
@@ -152,7 +154,7 @@ async function main() {
     console.log('3. Accédez à /admin/users pour gérer les validations');
     console.log('4. Les nouveaux utilisateurs seront en statut PENDING par défaut\n');
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erreur:', error.message);
     console.error('\n💡 Solutions possibles:');
     console.error('- Vérifiez que la base de données est accessible');
