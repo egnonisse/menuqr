@@ -51,6 +51,12 @@ model User {
     password      String?
     emailVerified DateTime?
     image         String?
+    // Nouveaux champs pour la validation des comptes
+    isApproved    Boolean       @default(false)  // Validation par un super-admin
+    approvedAt    DateTime?                      // Date d'approbation
+    rejectedAt    DateTime?                      // Date de rejet
+    rejectionReason String?                      // Raison du rejet
+    role          UserRole      @default(PENDING) // Rôle de l'utilisateur
     accounts      Account[]
     sessions      Session[]
     restaurant    Restaurant?
@@ -297,4 +303,11 @@ enum SubscriptionStatus {
     PAST_DUE
     CANCELED
     UNPAID
+}
+
+enum UserRole {
+    PENDING      // En attente de validation
+    ADMIN        // Administrateur de restaurant validé
+    SUPER_ADMIN  // Super administrateur (peut valider les comptes)
+    REJECTED     // Compte rejeté
 }

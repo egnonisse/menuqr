@@ -7,6 +7,7 @@ import { feedbacksRouter } from "@/server/api/routers/feedbacks";
 import { homepageRouter } from "@/server/api/routers/homepage";
 import { settingsRouter } from "@/server/api/routers/settings";
 import { ordersRouter } from "@/server/api/routers/orders";
+import { userRouter } from "@/server/api/routers/user";
 
 import { subscriptionRouter } from "@/server/api/routers/subscription";
 import { demoRouter } from "@/server/api/routers/demo";
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
 	homepage: homepageRouter,
 	settings: settingsRouter,
 	orders: ordersRouter,
+	user: userRouter,
 	subscription: subscriptionRouter,
 	demo: demoRouter,
 });

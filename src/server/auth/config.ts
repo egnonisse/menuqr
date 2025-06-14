@@ -18,11 +18,15 @@ declare module "next-auth" {
 			email: string;
 			name: string;
 			restaurantId?: string;
+			isApproved?: boolean;
+			role?: string;
 		} & DefaultSession["user"];
 	}
 
 	interface User {
 		restaurantId?: string;
+		isApproved?: boolean;
+		role?: string;
 	}
 }
 
@@ -69,7 +73,9 @@ export const authConfig = {
 					id: user.id,
 					email: user.email!,
 					name: user.name!,
-					restaurantId: user.restaurant?.id
+					restaurantId: user.restaurant?.id,
+					isApproved: user.isApproved,
+					role: user.role
 				};
 			}
 		})
@@ -83,7 +89,30 @@ export const authConfig = {
 		async jwt({ token, user }) {
 			if (user) {
 				token.restaurantId = user.restaurantId;
+				token.isApproved = user.isApproved;
+				token.role = user.role;
 			}
+			
+			// Récupérer les données fraîches de l'utilisateur à chaque session
+			if (token.sub) {
+				const freshUser = await db.user.findUnique({
+					where: { id: token.sub },
+					select: {
+						isApproved: true,
+						role: true,
+						restaurant: {
+							select: { id: true }
+						}
+					}
+				});
+				
+				if (freshUser) {
+					token.isApproved = freshUser.isApproved;
+					token.role = freshUser.role;
+					token.restaurantId = freshUser.restaurant?.id;
+				}
+			}
+			
 			return token;
 		},
 		async session({ session, token }) {
@@ -93,6 +122,8 @@ export const authConfig = {
 				...session.user,
 					id: token.sub!,
 					restaurantId: token.restaurantId as string | undefined,
+					isApproved: token.isApproved as boolean | undefined,
+					role: token.role as string | undefined,
 				},
 			};
 			},
